@@ -223,6 +223,31 @@ Every endpoint follows these patterns:
 **Location:** `dashboard-v1/` — run with `cd dashboard-v1 && npm run dev`
 Connects directly to Supabase via anon key. **Superseded** by the Next.js dashboard above. Preserved for reference but no longer deployed.
 
+## MCP Server
+
+**Location:** `mcp/` — TypeScript MCP server connecting AI clients to the TRI REST API
+**SDK:** `@modelcontextprotocol/sdk` (stdio transport)
+**Run:** `cd mcp && npm install && npm run build && node dist/index.js`
+
+### Environment Variables
+- `TRI_API_KEY` (required) — API key (`sk_live_...`) with `manager` role recommended
+- `TRI_API_URL` (optional) — API base URL (default: `http://localhost:3000`)
+
+### How It Works
+- Runs locally as a child process spawned by the AI client (Claude Desktop, Claude Code, Cursor, Cline)
+- Communicates via stdin/stdout (stdio transport) — no network server to host
+- Every request sends `Authorization: Bearer sk_live_...` and `X-Change-Source: mcp`
+- All mutations audited with `change_source: mcp`
+
+### Tools (47)
+Maps to all API endpoints: portfolios, properties, spaces, tenants, leases, users, invitations, picklists, custom fields, audit log, API keys, plus system tools (health, schema).
+
+### Resources
+- `tri://properties`, `tri://tenants`, `tri://leases`, `tri://schema` — for context injection
+
+### Client Configuration
+See `mcp/README.md` for setup examples for Claude Desktop, Claude Code, Cursor, and Cline.
+
 ### Deployment
 - Vercel config: `vercel.json` at repo root (now configured for Next.js)
 - Auto-deploys on push to `main`

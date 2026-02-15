@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — MCP Server for AI Agent Access
+
+### Added
+- **MCP server** (`mcp/`) — TypeScript MCP server connecting AI clients to the TRI REST API via stdio transport
+- **47 tools** mapping to all API endpoints: CRUD for portfolios, properties, spaces, tenants, leases; user/invitation management; picklists, custom fields, audit log, API key management, and system tools (health check, schema discovery)
+- **4 MCP resources** for context injection: `tri://properties`, `tri://tenants`, `tri://leases`, `tri://schema`
+- **API client module** (`mcp/src/api-client.ts`) — HTTP client that sends `Authorization: Bearer sk_live_...` and `X-Change-Source: mcp` on every request, with structured error parsing
+- **README** (`mcp/README.md`) — Setup instructions with client configuration examples for Claude Desktop, Claude Code, Cursor, and Cline
+- **OpenAPI docs updated** — MCP setup guide added to the API description at `/api/v1/docs`
+
+### Architecture
+- **SDK:** `@modelcontextprotocol/sdk` (TypeScript)
+- **Transport:** stdio — runs locally as a child process, no hosting required
+- **Auth:** API key via `TRI_API_KEY` env var, role-aware (manager recommended, admin for full access)
+- **Error handling:** Parses API error format `{ error: { code, message, details, request_id } }` and returns clear text to the AI client
+- See ADR-021 for full rationale
+
+---
+
 ## [2026-02-15] — API Key Management & MCP Enablement
 
 ### Added

@@ -399,3 +399,33 @@ Implement a dedicated `api_keys` table with SHA-256 hashed keys that authenticat
 - **OAuth 2.0 Client Credentials:** More complex, requires a separate token exchange flow. API keys are simpler and sufficient for current needs.
 - **Supabase service_role key per integration:** Single key for everything, no per-integration permissions or revocation. Unacceptable for multi-tenant security.
 - **Personal access tokens (PATs):** Tied to a user's session, expire with the user. API keys are org-scoped and persist beyond individual user deactivation.
+
+---
+
+## ADR-021: MCP Server Architecture — stdio Transport with API Key Auth
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+The platform needs an MCP (Model Context Protocol) server so AI clients like Claude Desktop, Claude Code, Cursor, and Cline can interact with the real estate platform. Key decisions: transport mechanism, authentication method, hosting model, and tool granularity.
+
+### Decision
+Build a TypeScript MCP server using `@modelcontextprotocol/sdk` with stdio transport. The server runs locally on the user's machine as a child process spawned by the AI client. Authentication uses API keys (`sk_live_...`) via the existing `getAuthContext()` flow. Every request includes `X-Change-Source: mcp` for audit attribution.
+
+### Key Design Choices
+
+**stdio over HTTP/SSE transport:** stdio is the universal transport — every MCP client supports it. HTTP/SSE would require hosting the server and managing network security. stdio runs locally with no exposed ports, and the API key never leaves the user's machine (it's passed as an environment variable to the child process).
+
+**API client wrapper (not direct Supabase):** The MCP server is a client of the REST API at `/api/v1/`, not a direct database client. This maintains the three-layer security model (RLS → API middleware → client), ensures all mutations go through validation and audit logging, and means the MCP server needs only an API key — no database credentials.
+
+**One tool per endpoint (not aggregated):** Each API endpoint maps to a distinct MCP tool (e.g., `list_properties`, `get_property`, `create_property`). This gives AI clients maximum flexibility and makes tool descriptions self-documenting. Aggregated tools (e.g., a single `properties` tool with a `method` parameter) would reduce discoverability and make it harder for AI models to select the right action.
+
+**Manager role recommended (not admin):** The MCP server's API key should use `manager` role for day-to-day operations. This follows the principle of least privilege — managers can read and write all entity data but cannot delete records or manage users. Admin-only tools (delete, user management, API key management) note the role requirement in their descriptions.
+
+**MCP resources for context injection:** Key entities (properties, tenants, leases, schema) are also exposed as MCP resources. This lets AI clients pull in organizational context without explicit tool calls — useful for grounding conversations in the current portfolio state.
+
+### Alternatives Considered
+- **HTTP/SSE transport:** More complex deployment (needs a running server), but enables remote/shared access. Could be added later if needed.
+- **Direct Supabase client:** Would bypass API validation, audit logging, and role enforcement. Rejected for security reasons.
+- **Dynamic tool generation from OpenAPI spec:** Would auto-generate tools from the OpenAPI spec. More maintainable at scale but adds complexity and makes tool descriptions less precise. Manual registration chosen for 47 tools — still manageable and allows custom descriptions per tool.
