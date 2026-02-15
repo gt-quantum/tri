@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — OpenAPI Documentation: Auth Endpoints & Security Scheme
+
+### Added
+- **Security scheme definition:** Registered `bearerAuth` component in OpenAPI spec with type `http`, scheme `bearer`, format `JWT`, and description of how to obtain and refresh tokens.
+- **9 auth/user-management endpoints** now documented in OpenAPI spec:
+  - `POST /api/v1/auth/create-org` — Onboarding (create organization)
+  - `GET /api/v1/invitations` — List org invitations
+  - `POST /api/v1/invitations` — Create invitation
+  - `GET /api/v1/invitations/lookup` — Public invitation lookup by token
+  - `PATCH /api/v1/invitations/{id}/resend` — Resend invitation with new token
+  - `PATCH /api/v1/invitations/{id}/revoke` — Revoke pending invitation
+  - `PATCH /api/v1/users/{id}/role` — Change user role
+  - `POST /api/v1/users/{id}/deactivate` — Soft-delete user
+  - `POST /api/v1/users/{id}/reactivate` — Restore deactivated user
+- **Invitation and Organization schemas** registered for proper response documentation
+- **Comprehensive API description** with authentication guide, role hierarchy table, and conventions (multi-tenant, soft deletes, enriched responses, audit logging, pagination)
+- **Public endpoint markers:** Health, invitation lookup endpoints marked with `security: []` to indicate no auth required
+
+### Fixed
+- **Invalid OpenAPI spec:** Previously referenced `bearerAuth` security scheme without defining it in `components.securitySchemes`. Spec is now valid OpenAPI 3.1.
+
+---
+
 ## [2026-02-15] — Security Hardening: API Data Exposure Fixes
 
 ### Fixed
