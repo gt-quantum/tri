@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [2026-02-15] — Portfolio Map View
+## [2026-02-15] — Portfolio Map & Dynamic Data
 
 ### Added
 - Interactive dark-themed map on dashboard using Leaflet + react-leaflet (CartoDB dark matter tiles)
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 - Popup on marker click showing property name, city, type badge, occupancy %, monthly rent, and "View Property" button
 - Clicking property name or button in popup navigates to property detail page
 - Leaflet popup CSS overrides to match Obsidian & Brass theme
+- Fetch `organizations` and `portfolios` tables in App.jsx (now 6 tables total)
+
+### Changed
+- Organization name in dashboard header and all page footers now pulled dynamically from `organizations` table (was hardcoded "Apex Capital Partners")
+- Dashboard subtitle now pulled dynamically from `portfolios` table (was hardcoded "Southeast Commercial Portfolio Overview")
+- Removed hardcoded REIT badge from dashboard header
 
 ---
 

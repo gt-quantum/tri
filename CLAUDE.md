@@ -38,7 +38,7 @@ tenants + spaces/properties → leases (many-to-many via leases)
 **Location:** `dashboard/` — run with `cd dashboard && npm run dev`
 
 ### Architecture
-- `src/App.jsx` — Data fetching (all 4 tables via Supabase) + React Router routes
+- `src/App.jsx` — Data fetching (6 tables: organizations, portfolios, properties, spaces, tenants, leases) + React Router routes
 - `src/pages/` — Page-level components (Dashboard, PropertyDetail, TenantDetail)
 - `src/components/` — Shared components (SummaryCards, PropertiesTable, TenantOverview, LeaseTimeline, VacancyView, PropertyMap)
 - `src/lib/supabase.js` — Supabase client (service_role key, dev only)
@@ -50,7 +50,8 @@ tenants + spaces/properties → leases (many-to-many via leases)
 - `/tenant/:id` — Tenant detail (header, parent/subsidiary info, portfolio footprint, active leases, lease history)
 
 ### Data Flow
-- `App.jsx` fetches all data once on mount (properties, spaces, tenants, leases) and passes to routed pages
+- `App.jsx` fetches all data once on mount (organizations, portfolios, properties, spaces, tenants, leases) and passes to routed pages
+- Org name and portfolio name are dynamic — no hardcoded org-specific text in the UI
 - Components use `useMemo` for derived calculations
 - All property and tenant names are cross-linked via React Router `<Link>`
 
