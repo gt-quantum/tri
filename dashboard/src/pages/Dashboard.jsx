@@ -1,4 +1,5 @@
 import SummaryCards from '../components/SummaryCards'
+import PropertyMap from '../components/PropertyMap'
 import PropertiesTable from '../components/PropertiesTable'
 import TenantOverview from '../components/TenantOverview'
 import LeaseTimeline from '../components/LeaseTimeline'
@@ -25,8 +26,18 @@ export default function Dashboard({ data }) {
           <SummaryCards data={data} />
         </div>
 
-        {/* Properties */}
+        {/* Portfolio Map */}
         <section className="mt-12 animate-fade-up stagger-2">
+          <div className="flex items-center gap-4 mb-5">
+            <h2 className="section-heading">Portfolio Map</h2>
+            <div className="flex-1 brass-line" />
+            <span className="text-warm-400 text-xs font-body tabular">{data.properties.filter(p => p.lat && p.lng).length} locations</span>
+          </div>
+          <PropertyMap data={data} />
+        </section>
+
+        {/* Properties */}
+        <section className="mt-12 animate-fade-up stagger-3">
           <div className="flex items-center gap-4 mb-5">
             <h2 className="section-heading">Properties</h2>
             <div className="flex-1 brass-line" />
@@ -36,7 +47,7 @@ export default function Dashboard({ data }) {
         </section>
 
         {/* Tenants */}
-        <section className="mt-12 animate-fade-up stagger-3">
+        <section className="mt-12 animate-fade-up stagger-4">
           <div className="flex items-center gap-4 mb-5">
             <h2 className="section-heading">Tenants</h2>
             <div className="flex-1 brass-line" />
@@ -46,7 +57,7 @@ export default function Dashboard({ data }) {
         </section>
 
         {/* Lease Timeline */}
-        <section className="mt-12 animate-fade-up stagger-4">
+        <section className="mt-12 animate-fade-up stagger-5">
           <div className="flex items-center gap-4 mb-5">
             <h2 className="section-heading">Lease Expirations</h2>
             <div className="flex-1 brass-line" />
@@ -56,7 +67,7 @@ export default function Dashboard({ data }) {
         </section>
 
         {/* Vacancy View */}
-        <section className="mt-12 mb-16 animate-fade-up stagger-5">
+        <section className="mt-12 mb-16 animate-fade-up stagger-6">
           <div className="flex items-center gap-4 mb-5">
             <h2 className="section-heading">Vacancies</h2>
             <div className="flex-1 brass-line" />

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Portfolio Map View
+
+### Added
+- Interactive dark-themed map on dashboard using Leaflet + react-leaflet (CartoDB dark matter tiles)
+- Custom brass SVG markers for each property location
+- Popup on marker click showing property name, city, type badge, occupancy %, monthly rent, and "View Property" button
+- Clicking property name or button in popup navigates to property detail page
+- Leaflet popup CSS overrides to match Obsidian & Brass theme
+
+---
+
 ## [2026-02-14] — Property & Tenant Detail Pages
 
 ### Added
