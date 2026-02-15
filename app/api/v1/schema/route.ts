@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAuthContext } from '@/lib/auth'
+import { getAuthContext, requireRole } from '@/lib/auth'
 import { errorResponse } from '@/lib/errors'
 import { generateRequestId, successResponse } from '@/lib/response'
 
@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const requestId = generateRequestId()
   try {
     const auth = await getAuthContext(request)
+    requireRole(auth, 'manager')
 
     // Fetch all active picklist values for this org (org-specific + system defaults)
     const { data: picklists } = await supabase

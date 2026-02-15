@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Security Hardening: API Data Exposure Fixes
+
+### Fixed
+- **Invitation token exposure (CRITICAL):** All 4 invitation endpoints (`GET /invitations`, `POST /invitations`, `PATCH .../resend`, `PATCH .../revoke`) now use explicit field lists that exclude the raw `token` column. Tokens are only exposed via the `invite_url` on create/resend.
+- **Legacy dashboard service_role key (CRITICAL):** `dashboard-v1/.env` was using the Supabase `service_role` key (which bypasses all RLS) as `VITE_SUPABASE_KEY`. Replaced with the `anon` key.
+- **Open redirect in OAuth callback (MAJOR):** `app/auth/callback/route.ts` now validates the `next` query param to ensure it starts with `/` and is not `//`, preventing redirect to external sites after OAuth.
+- **Bare `.select()` on user endpoints (HIGH):** `PATCH /users/:id/role`, `POST /users/:id/deactivate`, and `POST /users/:id/reactivate` now use explicit field lists (`id, org_id, email, full_name, role, created_at`) instead of bare `.select()` which returned all columns including `auth_provider`, `last_login_at`, `avatar_url`.
+- **Bare `.select()` / `SELECT *` on tenant endpoints (HIGH):** `GET /tenants` list, `POST /tenants`, and `PATCH /tenants/:id` now use explicit field lists instead of `select('*')` or bare `.select()`.
+
+### Changed
+- **`GET /api/v1/users` now requires `manager` role:** Previously any authenticated user (including viewers) could enumerate all org members, emails, and roles.
+- **`GET /api/v1/schema` now requires `manager` role:** Previously any authenticated user could see the full data model, relationships, custom fields, and picklist values. Now restricted to managers+ (keeps MCP/AI agent access while limiting viewer exposure).
+
+### Design Decisions
+- **Explicit field lists over SELECT *:** All security-sensitive endpoints now enumerate returned columns explicitly. This prevents future column additions from auto-leaking in responses and documents the API contract clearly.
+- **Manager role for schema endpoint (not admin):** Schema discovery is critical for MCP/AI agents which typically authenticate as manager. Admin-only would break this use case.
+- See ADR-019 for full rationale.
+
+---
+
 ## [2026-02-15] — Dashboard Port: Analytics & Detail Pages in Next.js
 
 ### Added

@@ -25,7 +25,7 @@ export async function PATCH(
     // Fetch the invitation
     const { data: invitation, error } = await supabase
       .from('invitations')
-      .select('*')
+      .select('id, org_id, email, role, invited_by, accepted_at, revoked_at, expires_at, created_at')
       .eq('id', id)
       .eq('org_id', auth.orgId)
       .single()
@@ -68,7 +68,7 @@ export async function PATCH(
         expires_at: newExpiry,
       })
       .eq('id', id)
-      .select()
+      .select('id, org_id, email, role, invited_by, accepted_at, revoked_at, expires_at, created_at')
       .single()
 
     if (updateError) throw updateError

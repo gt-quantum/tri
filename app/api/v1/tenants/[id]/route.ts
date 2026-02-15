@@ -113,7 +113,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { data: existing, error: fetchError } = await supabase
       .from('tenants')
-      .select('*')
+      .select('id, org_id, company_name, industry, website, primary_contact_name, primary_contact_email, primary_contact_phone, credit_rating, parent_tenant_id, metadata, created_at, updated_at')
       .eq('id', id)
       .eq('org_id', auth.orgId)
       .is('deleted_at', null)
@@ -150,7 +150,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .update({ ...body, updated_at: new Date().toISOString() })
       .eq('id', id)
       .eq('org_id', auth.orgId)
-      .select()
+      .select('id, org_id, company_name, industry, website, primary_contact_name, primary_contact_email, primary_contact_phone, credit_rating, parent_tenant_id, metadata, created_at, updated_at')
       .single()
 
     if (error) throw error

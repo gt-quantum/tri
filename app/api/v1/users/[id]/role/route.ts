@@ -39,7 +39,7 @@ export async function PATCH(
     // Fetch the target user
     const { data: targetUser, error } = await supabase
       .from('users')
-      .select('*')
+      .select('id, org_id, email, full_name, role, created_at')
       .eq('id', id)
       .eq('org_id', auth.orgId)
       .is('deleted_at', null)
@@ -76,7 +76,7 @@ export async function PATCH(
       .from('users')
       .update({ role: body.role })
       .eq('id', id)
-      .select()
+      .select('id, org_id, email, full_name, role, created_at')
       .single()
 
     if (updateError) throw updateError

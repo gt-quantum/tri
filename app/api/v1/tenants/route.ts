@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('tenants')
-      .select('*', { count: 'exact' })
+      .select('id, org_id, company_name, industry, website, primary_contact_name, primary_contact_email, primary_contact_phone, credit_rating, parent_tenant_id, metadata, created_at, updated_at, deleted_at', { count: 'exact' })
       .eq('org_id', auth.orgId)
 
     if (params.include_deleted !== 'true') {
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     const { data: created, error } = await supabase
       .from('tenants')
       .insert({ ...body, org_id: auth.orgId, created_at: now, updated_at: now })
-      .select()
+      .select('id, org_id, company_name, industry, website, primary_contact_name, primary_contact_email, primary_contact_phone, credit_rating, parent_tenant_id, metadata, created_at, updated_at')
       .single()
 
     if (error) throw error

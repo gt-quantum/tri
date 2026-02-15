@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     const { data, error, count } = await supabase
       .from('invitations')
-      .select('*, users!invitations_invited_by_fkey(full_name, email)', {
+      .select('id, org_id, email, role, invited_by, accepted_at, revoked_at, expires_at, created_at, users!invitations_invited_by_fkey(full_name, email)', {
         count: 'exact',
       })
       .eq('org_id', auth.orgId)
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (error) throw error
 
     const enriched = (data || []).map((row) => {
-      const { users, ...invitation } = row as Record<string, unknown> & {
+      const { users, ...invitation } = row as unknown as Record<string, unknown> & {
         users: { full_name: string; email: string } | null
       }
       return {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
           Date.now() + 7 * 24 * 60 * 60 * 1000
         ).toISOString(),
       })
-      .select()
+      .select('id, org_id, email, role, invited_by, accepted_at, revoked_at, expires_at, created_at')
       .single()
 
     if (error) throw error
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
     return successResponse(
       {
         ...invitation,
-        invite_url: inviteUrl,
+        invite_url: inviteUrl,  // URL contains the token; raw token is not returned
       },
       requestId,
       201

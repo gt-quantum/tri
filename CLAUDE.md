@@ -77,6 +77,7 @@ Every endpoint follows these patterns:
 7. **Soft deletes:** DELETE sets `deleted_at`, GET excludes deleted by default, `?include_deleted=true` to see them
 8. **Response format:** `{ data, meta: { timestamp, request_id } }` for items, `{ data, meta: { total, limit, offset } }` for lists
 9. **AI-forward:** Responses include resolved names (e.g., `portfolio_name`, `tenant_name`) alongside foreign key IDs
+10. **Explicit field lists:** Security-sensitive endpoints use explicit `.select('field1, field2, ...')` — never bare `.select()` or `select('*')`. Invitation `token` is never returned in responses.
 
 ### Endpoints
 
@@ -116,7 +117,7 @@ Every endpoint follows these patterns:
 - `DELETE /api/v1/leases/:id` — Soft delete (admin only)
 
 **Users** — `lib/schemas/users.ts`
-- `GET /api/v1/users` — List (filter: role, search by name/email)
+- `GET /api/v1/users` — List (manager+; filter: role, search by name/email)
 - `GET /api/v1/users/:id` — Detail
 - `POST /api/v1/users` — Create (admin only, handles duplicate email conflict)
 - `PATCH /api/v1/users/:id` — Update (admin only)
@@ -150,7 +151,7 @@ Every endpoint follows these patterns:
 
 **System & Docs**
 - `GET /api/v1/health` — Health check
-- `GET /api/v1/schema` — Full data model discovery (entities, fields, relationships, picklist values, custom fields, conventions)
+- `GET /api/v1/schema` — Full data model discovery (manager+; entities, fields, relationships, picklist values, custom fields, conventions)
 - `GET /api/v1/openapi.json` — OpenAPI 3.1 spec (auto-generated from Zod schemas)
 - `GET /api/v1/docs` — Interactive API documentation (Scalar viewer)
 
@@ -205,7 +206,7 @@ Every endpoint follows these patterns:
 ## Legacy Dashboard (v1)
 
 **Location:** `dashboard-v1/` — run with `cd dashboard-v1 && npm run dev`
-Connects directly to Supabase via service_role key. **Superseded** by the Next.js dashboard above. Preserved for reference but no longer deployed.
+Connects directly to Supabase via anon key. **Superseded** by the Next.js dashboard above. Preserved for reference but no longer deployed.
 
 ### Deployment
 - Vercel config: `vercel.json` at repo root (now configured for Next.js)

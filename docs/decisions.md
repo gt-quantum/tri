@@ -332,3 +332,31 @@ Port all dashboard-v1 components (9 visualizations + 2 detail pages) into the Ne
 ### Notes
 - Dashboard-v1 is preserved in `dashboard-v1/` but is no longer the deployed frontend
 - ADR-010 (Vite dashboard) and ADR-011 (React Router) are now fully superseded for the production app
+
+---
+
+## ADR-019: API Security Hardening — Explicit Field Lists and Role Restrictions
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+A security audit of the API layer revealed several data exposure issues:
+1. Invitation tokens (security-sensitive) were returned in all invitation endpoint responses via `select('*')` and bare `.select()`
+2. User endpoints returned extra columns (`auth_provider`, `last_login_at`, `avatar_url`) via bare `.select()`
+3. The legacy dashboard `dashboard-v1/.env` contained the Supabase service_role key as a `VITE_` env var (exposed to browser)
+4. OAuth callback had an open redirect vulnerability via unvalidated `next` parameter
+5. `GET /users` and `GET /schema` had no role restrictions — viewers could enumerate all org members and the full data model
+
+### Decision
+- **Explicit field lists:** All security-sensitive endpoints now use explicit `.select('field1, field2, ...')` instead of `.select('*')` or bare `.select()`. This applies to all invitation, user auth, and tenant endpoints.
+- **Token exclusion:** Invitation `token` is never returned in API responses. The token is only accessible via the `invite_url` returned on create/resend.
+- **Role restrictions:** `GET /users` and `GET /schema` now require `manager` role minimum.
+- **Open redirect fix:** OAuth callback validates `next` param is a relative path (starts with `/`, not `//`).
+- **Legacy dashboard fix:** Replaced service_role key with anon key in `dashboard-v1/.env`.
+
+### Rationale
+- **Explicit over implicit:** `SELECT *` is convenient but dangerous — any column added to a table in the future will automatically appear in API responses. Explicit field lists make the API contract visible and prevent accidental data leaks.
+- **Manager for schema (not admin):** MCP/AI agents authenticate as `manager` role. Restricting schema to admin-only would break AI-forward use cases. Manager provides a reasonable middle ground — it keeps sensitive structural information away from viewer-level users while enabling automation.
+- **Manager for user list:** Viewing the full org member list (emails, roles) is an administrative function. Viewers interacting with the dashboard don't need to see other users.
+- **Token security:** Invitation tokens are equivalent to single-use passwords. Exposing them in list/update responses means any admin/manager could see tokens intended for specific invitees, enabling impersonation.

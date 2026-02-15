@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   const requestId = generateRequestId()
   try {
     const auth = await getAuthContext(request)
+    requireRole(auth, 'manager')
     const params = parseQuery(request.nextUrl.searchParams, listUsersQuery)
 
     let query = supabase

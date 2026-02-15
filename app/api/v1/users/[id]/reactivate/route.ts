@@ -27,7 +27,7 @@ export async function POST(
     // Fetch the target user (must be deactivated)
     const { data: targetUser, error } = await supabase
       .from('users')
-      .select('*')
+      .select('id, org_id, email, full_name, role, created_at')
       .eq('id', id)
       .eq('org_id', auth.orgId)
       .not('deleted_at', 'is', null)
@@ -46,7 +46,7 @@ export async function POST(
       .from('users')
       .update({ deleted_at: null })
       .eq('id', id)
-      .select()
+      .select('id, org_id, email, full_name, role, created_at')
       .single()
 
     if (updateError) throw updateError
