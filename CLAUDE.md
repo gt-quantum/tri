@@ -3,7 +3,7 @@
 ## Tech Stack
 - **Database:** Supabase (PostgreSQL) with Row-Level Security
 - **API:** Next.js 15 (App Router) + TypeScript — Route Handlers at `/api/v1/`
-- **Validation:** Zod schemas (also used for OpenAPI generation later)
+- **Validation:** Zod schemas (also powers OpenAPI 3.1 spec generation)
 - **Legacy Dashboard:** React 18 + Vite + Tailwind 3 (in `dashboard-v1/`, being replaced)
 - **Charts:** Recharts (SVG-based, native React components)
 - **Map:** Leaflet + react-leaflet v4 (CartoDB dark matter tiles, no API key)

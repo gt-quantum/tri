@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Phase 1: API Layer & Application Foundation
+
+### Added
+- **Next.js 15 App Router** at repo root — TypeScript, Tailwind (ported Obsidian & Brass theme)
+- **23 REST API routes** at `/api/v1/` covering all entities:
+  - **Properties** — full CRUD with portfolio validation, enriched detail (spaces + leases with tenant/space names)
+  - **Portfolios** — full CRUD, detail includes property summary
+  - **Tenants** — full CRUD with parent/subsidiary validation, search filter, subsidiary enrichment
+  - **Spaces** — full CRUD with property validation, enriched with property_name
+  - **Leases** — full CRUD with cross-entity validation (tenant + property in same org, space belongs to property, date consistency), auto-calculates annual_rent
+  - **Users** — full CRUD (admin only for mutations), duplicate email conflict handling, self-deletion prevention
+  - **Picklists** — list (org + system defaults with scope label), create (org-specific), update (blocks system picklist edits)
+  - **Custom Fields** — list, create (snake_case field_name validation), update
+  - **Audit Log** — read-only query with rich filtering (entity_type, entity_id, field_name, action, changed_by, change_source, date range), enriched with changed_by_name
+  - **Schema Discovery** — full data model, relationships, picklist values, custom fields, conventions (designed for AI consumption)
+  - **Health Check** — status endpoint
+- **Shared API patterns** (`lib/`):
+  - `auth.ts` — dev-mode auth (hardcoded Sarah Chen admin), role hierarchy enforcement
+  - `errors.ts` — consistent error codes (VALIDATION_ERROR, NOT_FOUND, UNAUTHORIZED, FORBIDDEN, CONFLICT, INTERNAL_ERROR)
+  - `response.ts` — standard response envelopes with request_id tracking
+  - `audit.ts` — per-field diff audit logging with change_source via `X-Change-Source` header
+  - `validation.ts` — Zod parsing for request bodies and query params, pagination schema
+  - `supabase.ts` — lazy-initialized server-side client (service_role key, bypasses RLS)
+- **Zod schemas** (`lib/schemas/`) for all entities — validation + OpenAPI generation
+- **OpenAPI 3.1 spec** auto-generated from Zod schemas (`/api/v1/openapi.json`)
+- **Interactive API docs** via Scalar viewer (`/api/v1/docs`)
+- **OpenAPI registry** (`lib/openapi.ts`) with all schemas and routes registered
+- **Database migrations:**
+  - `00005_add_created_updated_by.sql` — added created_by/updated_by columns to 5 core entity tables with backfill from audit_log
+  - `00006_updated_at_triggers.sql` — BEFORE UPDATE triggers on 6 tables to auto-set updated_at
+- Vercel deployment configured for Next.js (env vars: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
+
+### Changed
+- Renamed `dashboard/` → `dashboard-v1/` (legacy Vite dashboard preserved, no longer deployed)
+- `vercel.json` updated from Vite SPA rewrite to Next.js framework config
+- `.gitignore` updated for Next.js (`.next/`, `out/`, `next-env.d.ts`, `.vite/`)
+
+### Design Decisions
+- **Next.js App Router over separate API server:** Keeps API and future frontend in one deployable unit, leverages Vercel's edge infrastructure, avoids managing a separate server process
+- **API-level audit logging (not DB triggers):** Gives richer context — the API knows the user identity, change source, and can compute per-field diffs. DB triggers would only see the raw SQL and miss this context
+- **Dev-mode auth with hardcoded user:** Unblocks all API development without auth infrastructure. Auth context interface is already defined so swapping to real Supabase Auth is a drop-in replacement
+- **Lazy Supabase client:** Client initializes on first request, not at module load time — prevents build failures when env vars aren't available during Vercel's build step
+
+---
+
 ## [2026-02-15] — Portfolio Analytics Visualizations
 
 ### Added

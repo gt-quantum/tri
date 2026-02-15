@@ -135,7 +135,7 @@ Each table received two new nullable uuid columns with FK → users(id), no ON D
 ## [2026-02-15] — Auto-update updated_at triggers
 
 **Migration:** `00006_updated_at_triggers.sql`
-**Status:** Pending — needs to be run by user via Supabase SQL Editor
+**Status:** Executed successfully
 
 ### Changes:
 - Created `public.set_updated_at()` trigger function (BEFORE UPDATE, sets `NEW.updated_at = NOW()`)
@@ -164,4 +164,5 @@ Ensures `updated_at` is always accurate on every UPDATE, regardless of whether t
 **RLS:** Enabled on all 12 data tables with org_id policies
 **System picklists:** 42 rows across 8 categories
 **Seed data:** Loaded — 1 org, 3 users, 1 portfolio, 10 properties, 79 spaces, 20 tenants, 70 leases, 10 audit entries
-**Schema changes:** 00005 added created_by/updated_by columns to 5 core entity tables
+**Triggers:** 6 BEFORE UPDATE triggers on core tables (auto-set updated_at via `public.set_updated_at()`)
+**Schema changes:** 00005 added created_by/updated_by columns to 5 core entity tables; 00006 added updated_at triggers to 6 tables

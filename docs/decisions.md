@@ -146,7 +146,7 @@ The database schema supports web, desktop, and MCP server clients equally. No cl
 ## ADR-010: React + Vite + Tailwind Dashboard
 
 **Date:** 2026-02-14
-**Status:** Accepted
+**Status:** Superseded by ADR-012 (legacy dashboard preserved in `dashboard-v1/`)
 
 ### Context
 Need a developer/admin dashboard to visualize portfolio data during development. Must connect directly to Supabase and render seed data.
@@ -179,3 +179,87 @@ Use React Router v6 for client-side SPA routing. Data is fetched once at the `Ap
 - Detail pages (`/property/:id`, `/tenant/:id`) need unique URLs for direct linking and browser navigation
 - Single data fetch at app level avoids redundant Supabase queries when navigating between pages
 - React Router is the de facto standard for React SPAs — minimal learning curve and good ecosystem support
+
+---
+
+## ADR-012: Next.js 15 App Router for API Layer
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+Need a REST API layer between clients (web, desktop, MCP) and the Supabase database. Options considered: (a) standalone Express/Fastify server, (b) Supabase Edge Functions, (c) Next.js App Router with Route Handlers.
+
+### Decision
+Use Next.js 15 App Router at the repo root. API routes live at `app/api/v1/`. The legacy Vite dashboard is preserved in `dashboard-v1/` but is no longer deployed.
+
+### Rationale
+- **Single deployable unit:** API and future frontend in one project, one Vercel deployment
+- **Route Handlers:** File-based routing for API endpoints matches the REST resource structure naturally
+- **TypeScript-native:** Full type safety from Zod schemas through to response envelopes
+- **Vercel integration:** Zero-config production deployments, serverless functions, edge-ready
+- **Future frontend:** When the dashboard is rebuilt, it lives alongside the API in the same project — no CORS, shared types, SSR/RSC available
+
+### Notes
+- Supersedes ADR-010 (Vite dashboard is now legacy)
+- Root-level project structure chosen over nested `api/` directory for simplicity
+
+---
+
+## ADR-013: API-Level Audit Logging
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+Need to record every data mutation for audit trail, historical analysis, and compliance. Options: (a) PostgreSQL triggers that auto-log on every INSERT/UPDATE/DELETE, (b) application-level logging in each API route.
+
+### Decision
+Audit logging happens at the API layer, not via database triggers. The `lib/audit.ts` module provides `auditCreate()`, `auditUpdate()`, and `auditSoftDelete()` functions called explicitly in each route handler.
+
+### Rationale
+- **Richer context:** The API knows the authenticated user, their role, and the client source (`X-Change-Source` header). DB triggers only see the raw SQL operation
+- **Per-field diffs:** `auditUpdate()` computes field-level old/new diffs, skipping unchanged fields and `updated_at` — more useful than logging the entire row
+- **Selective logging:** Not every table needs audit logging (e.g., picklists, custom_field_definitions). Application-level control is simpler than managing trigger exceptions
+- **Consistency with ADR-007:** The audit_log schema was designed for application-level writes from the start (change_source, changed_by fields)
+
+---
+
+## ADR-014: Dev-Mode Auth with Hardcoded User
+
+**Date:** 2026-02-15
+**Status:** Accepted (temporary — will be replaced by Supabase Auth)
+
+### Context
+Need auth context (userId, orgId, role) for every API request to enforce authorization and audit logging. Real auth (Supabase Auth) is not yet configured.
+
+### Decision
+`lib/auth.ts` returns a hardcoded `AuthContext` for Sarah Chen (admin, org `a1000000-...0001`) in dev mode. The `AuthContext` interface and `requireRole()` function are production-shaped so swapping to real auth is a drop-in replacement.
+
+### Rationale
+- Unblocks all API development — every route can call `getAuthContext()` and `requireRole()` today
+- The interface is already correct: `{ userId, orgId, role, email, fullName }` — only the implementation of `getAuthContext()` needs to change
+- Role hierarchy enforcement (`viewer < manager < admin`) is fully functional and tested
+
+---
+
+## ADR-015: Offset-Based Pagination
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+Need pagination for all list endpoints. Options: (a) offset-based (`?limit=25&offset=50`), (b) cursor-based (`?after=abc123`).
+
+### Decision
+Use offset-based pagination with `limit` and `offset` query parameters. Default limit is 25, max is 100.
+
+### Rationale
+- **Simpler for clients:** Offset/limit maps directly to UI concepts (page 1, page 2) and SQL OFFSET/LIMIT
+- **Random access:** Clients can jump to any page without iterating through cursors
+- **Dataset size:** With org-scoped data (typically hundreds to low thousands of records), offset performance is not a concern
+- **Supabase `.range()`:** Maps directly to Supabase's range-based query API
+
+### Notes
+- Cursor-based could be added later for specific high-volume endpoints if needed
+- Every list response includes `meta.total` for client-side page count calculations
