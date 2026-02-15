@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 
 export default function PropertyDetail({ data }) {
   const { id } = useParams()
-  const { properties, spaces, tenants, leases } = data
+  const { properties, spaces, tenants, leases, organization } = data
+  const orgName = organization?.name || 'Portfolio'
 
   const property = properties.find(p => p.id === id)
 
@@ -480,7 +481,7 @@ export default function PropertyDetail({ data }) {
       {/* Bottom accent */}
       <div className="h-px bg-gradient-to-r from-transparent via-brass/20 to-transparent" />
       <div className="text-center py-6">
-        <p className="text-warm-500 text-[10px] font-body uppercase tracking-[0.2em]">Apex Capital Partners &middot; Portfolio Intelligence</p>
+        <p className="text-warm-500 text-[10px] font-body uppercase tracking-[0.2em]">{orgName} &middot; Portfolio Intelligence</p>
       </div>
     </div>
   )

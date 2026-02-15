@@ -13,19 +13,25 @@ export default function App() {
   useEffect(() => {
     async function fetchAll() {
       try {
-        const [properties, spaces, tenants, leases] = await Promise.all([
+        const [orgs, portfolios, properties, spaces, tenants, leases] = await Promise.all([
+          supabase.from('organizations').select('*').is('deleted_at', null),
+          supabase.from('portfolios').select('*').is('deleted_at', null),
           supabase.from('properties').select('*').is('deleted_at', null),
           supabase.from('spaces').select('*').is('deleted_at', null),
           supabase.from('tenants').select('*').is('deleted_at', null),
           supabase.from('leases').select('*').is('deleted_at', null),
         ])
 
+        if (orgs.error) throw orgs.error
+        if (portfolios.error) throw portfolios.error
         if (properties.error) throw properties.error
         if (spaces.error) throw spaces.error
         if (tenants.error) throw tenants.error
         if (leases.error) throw leases.error
 
         setData({
+          organization: orgs.data[0] || null,
+          portfolios: portfolios.data,
           properties: properties.data,
           spaces: spaces.data,
           tenants: tenants.data,

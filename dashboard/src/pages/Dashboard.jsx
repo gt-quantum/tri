@@ -6,6 +6,9 @@ import LeaseTimeline from '../components/LeaseTimeline'
 import VacancyView from '../components/VacancyView'
 
 export default function Dashboard({ data }) {
+  const orgName = data.organization?.name || 'Portfolio'
+  const portfolioName = data.portfolios?.[0]?.name || ''
+
   return (
     <div className="min-h-screen">
       {/* Top accent line */}
@@ -15,9 +18,11 @@ export default function Dashboard({ data }) {
         {/* Header */}
         <header className="mb-10 animate-fade-up">
           <div className="mb-1">
-            <h1 className="font-display text-3xl text-warm-white tracking-wide">Apex Capital Partners</h1>
+            <h1 className="font-display text-3xl text-warm-white tracking-wide">{orgName}</h1>
           </div>
-          <p className="font-body text-warm-300 text-sm tracking-wide">Southeast Commercial Portfolio Overview</p>
+          {portfolioName && (
+            <p className="font-body text-warm-300 text-sm tracking-wide">{portfolioName} Overview</p>
+          )}
         </header>
 
         {/* Summary Cards */}
@@ -81,7 +86,7 @@ export default function Dashboard({ data }) {
       {/* Bottom accent */}
       <div className="h-px bg-gradient-to-r from-transparent via-brass/20 to-transparent" />
       <div className="text-center py-6">
-        <p className="text-warm-500 text-[10px] font-body uppercase tracking-[0.2em]">Apex Capital Partners &middot; Portfolio Intelligence</p>
+        <p className="text-warm-500 text-[10px] font-body uppercase tracking-[0.2em]">{orgName} &middot; Portfolio Intelligence</p>
       </div>
     </div>
   )
