@@ -1,4 +1,7 @@
 import SummaryCards from '../components/SummaryCards'
+import LeaseExpirationChart from '../components/LeaseExpirationChart'
+import RevenueConcentration from '../components/RevenueConcentration'
+import RentRollProjection from '../components/RentRollProjection'
 import PropertyMap from '../components/PropertyMap'
 import PropertiesTable from '../components/PropertiesTable'
 import TenantOverview from '../components/TenantOverview'
@@ -30,8 +33,40 @@ export default function Dashboard({ data }) {
           <SummaryCards data={data} />
         </div>
 
-        {/* Portfolio Map */}
+        {/* Lease Expiration Risk */}
         <section className="mt-12 animate-fade-up stagger-2">
+          <div className="flex items-center gap-4 mb-5">
+            <h2 className="section-heading">Lease Expiration Risk</h2>
+            <div className="flex-1 brass-line" />
+            <span className="text-warm-400 text-xs font-body tabular">24-month outlook</span>
+          </div>
+          <LeaseExpirationChart data={data} />
+        </section>
+
+        {/* Revenue Concentration */}
+        <section className="mt-12 animate-fade-up stagger-3">
+          <div className="flex items-center gap-4 mb-5">
+            <h2 className="section-heading">Tenant Diversification</h2>
+            <div className="flex-1 brass-line" />
+            <span className="text-warm-400 text-xs font-body tabular">
+              {data.leases.filter(l => l.status === 'active').length} active leases
+            </span>
+          </div>
+          <RevenueConcentration data={data} />
+        </section>
+
+        {/* Rent Roll Projection */}
+        <section className="mt-12 animate-fade-up stagger-4">
+          <div className="flex items-center gap-4 mb-5">
+            <h2 className="section-heading">Revenue Forecast</h2>
+            <div className="flex-1 brass-line" />
+            <span className="text-warm-400 text-xs font-body tabular">18-month projection</span>
+          </div>
+          <RentRollProjection data={data} />
+        </section>
+
+        {/* Portfolio Map */}
+        <section className="mt-12 animate-fade-up stagger-5">
           <div className="flex items-center gap-4 mb-5">
             <h2 className="section-heading">Portfolio Map</h2>
             <div className="flex-1 brass-line" />
@@ -41,7 +76,7 @@ export default function Dashboard({ data }) {
         </section>
 
         {/* Properties */}
-        <section className="mt-12 animate-fade-up stagger-3">
+        <section className="mt-12 animate-fade-up stagger-6">
           <div className="flex items-center gap-4 mb-5">
             <h2 className="section-heading">Properties</h2>
             <div className="flex-1 brass-line" />
@@ -51,7 +86,7 @@ export default function Dashboard({ data }) {
         </section>
 
         {/* Tenants */}
-        <section className="mt-12 animate-fade-up stagger-4">
+        <section className="mt-12 animate-fade-up stagger-7">
           <div className="flex items-center gap-4 mb-5">
             <h2 className="section-heading">Tenants</h2>
             <div className="flex-1 brass-line" />
@@ -61,7 +96,7 @@ export default function Dashboard({ data }) {
         </section>
 
         {/* Lease Timeline */}
-        <section className="mt-12 animate-fade-up stagger-5">
+        <section className="mt-12 animate-fade-up stagger-8">
           <div className="flex items-center gap-4 mb-5">
             <h2 className="section-heading">Lease Expirations</h2>
             <div className="flex-1 brass-line" />

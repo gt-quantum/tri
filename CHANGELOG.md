@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Portfolio Analytics Visualizations
+
+### Added
+- **Lease Expiration Risk Chart** (`LeaseExpirationChart.jsx`):
+  - Stacked bar chart showing monthly rent exposure by tenant credit risk tier for the next 24 months
+  - Three risk tiers: Low (excellent/good credit — green), Moderate (fair — amber), High (poor/unrated — red)
+  - Brass line overlay showing lease count per month on a secondary Y-axis
+  - Property scope toggle dropdown to filter to a single property or view all
+  - Rich hover tooltips: month, total $ expiring, per-tier breakdown ($ and count), tenant names
+  - Uses Recharts ComposedChart (Bar + Line)
+- **Revenue Concentration Chart** (`RevenueConcentration.jsx`):
+  - Donut chart showing top 5 tenants by monthly rent with "All Others" slice
+  - Key metrics panel: largest tenant name and % share, number of tenants representing 50% of revenue
+  - HHI (Herfindahl-Hirschman Index) concentration score with visual bar and Diversified/Moderate/Concentrated label
+  - Center label showing total monthly revenue
+  - Hover tooltips with tenant name, rent, share %, and active lease count
+- **Rent Roll Projection Chart** (`RentRollProjection.jsx`):
+  - Line chart projecting revenue over 18 months with three lines:
+    - Contracted revenue (base rent, drops as leases expire)
+    - With escalations (applies annual rent_escalation at lease anniversaries)
+    - Guaranteed floor (only leases extending beyond the 18-month horizon)
+  - Shaded amber area between contracted and floor highlighting revenue at risk
+  - Revenue at Risk callout in the header
+  - Summary metrics row: today's revenue, 18-month contracted endpoint, guaranteed floor as % of current
+  - Hover tooltips with revenue per line, delta from today, and active lease count
+- Installed `recharts` library for all chart rendering (native React components, SVG-based)
+
+### Design Decisions
+- **Recharts over Chart.js:** Recharts uses native React components and SVG rendering, which integrates naturally with the existing React architecture. Chart.js wraps a canvas element and requires refs/effects — more friction for a React app. Recharts also makes custom tooltips trivial (just JSX components).
+- **Charts placed between Summary Cards and Portfolio Map:** The three analytics charts answer strategic questions (exposure, concentration, trajectory) that should be seen before diving into the property-level detail tables below. This puts the "executive summary" flow at the top: KPIs → risk analysis → operational detail.
+- **HHI index on Revenue Concentration:** Added because it's the standard measure for portfolio concentration used in finance and antitrust analysis. Thresholds (1500/2500) follow DOJ/FTC guidelines adapted for tenant concentration.
+
+---
+
 ## [2026-02-15] — Portfolio Map & Dynamic Data
 
 ### Added

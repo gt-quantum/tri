@@ -3,6 +3,7 @@
 ## Tech Stack
 - **Database:** Supabase (PostgreSQL) with Row-Level Security
 - **Dashboard:** React 18 + Vite + Tailwind 3 + React Router 6
+- **Charts:** Recharts (SVG-based, native React components)
 - **Map:** Leaflet + react-leaflet v4 (CartoDB dark matter tiles, no API key)
 - **Hosting:** Vercel (auto-deploys from `main` branch)
 - **Future API Layer:** Node.js
@@ -40,12 +41,12 @@ tenants + spaces/properties → leases (many-to-many via leases)
 ### Architecture
 - `src/App.jsx` — Data fetching (6 tables: organizations, portfolios, properties, spaces, tenants, leases) + React Router routes
 - `src/pages/` — Page-level components (Dashboard, PropertyDetail, TenantDetail)
-- `src/components/` — Shared components (SummaryCards, PropertiesTable, TenantOverview, LeaseTimeline, VacancyView, PropertyMap)
+- `src/components/` — Shared components (SummaryCards, LeaseExpirationChart, RevenueConcentration, RentRollProjection, PropertyMap, PropertiesTable, TenantOverview, LeaseTimeline, VacancyView)
 - `src/lib/supabase.js` — Supabase client (service_role key, dev only)
 - Styling: Tailwind with custom "Obsidian & Brass" dark theme (see `tailwind.config.js` and `src/index.css`)
 
 ### Routes
-- `/` — Dashboard overview (summary cards, portfolio map, properties table, tenants, lease timeline, vacancies)
+- `/` — Dashboard overview (summary cards, lease expiration risk chart, revenue concentration, rent roll projection, portfolio map, properties table, tenants, lease timeline, vacancies)
 - `/property/:id` — Property detail (header, summary cards, spaces table, active leases, lease history)
 - `/tenant/:id` — Tenant detail (header, parent/subsidiary info, portfolio footprint, active leases, lease history)
 
