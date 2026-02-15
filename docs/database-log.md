@@ -99,12 +99,69 @@ All database changes are tracked here. No DB modifications are made outside of t
 
 ---
 
+## [2026-02-15] — Add created_by / updated_by to core entities
+
+**Migration:** `00005_add_created_updated_by.sql`
+
+### Columns added (5 tables):
+Each table received two new nullable uuid columns with FK → users(id), no ON DELETE CASCADE:
+- `portfolios` — `created_by`, `updated_by`
+- `properties` — `created_by`, `updated_by`
+- `spaces` — `created_by`, `updated_by`
+- `tenants` — `created_by`, `updated_by`
+- `leases` — `created_by`, `updated_by`
+
+**Organizations excluded** — circular FK dependency (users reference organizations, so the org must exist before any user).
+
+### Indexes added (5):
+- `idx_portfolios_created_by` on portfolios(created_by)
+- `idx_properties_created_by` on properties(created_by)
+- `idx_spaces_created_by` on spaces(created_by)
+- `idx_tenants_created_by` on tenants(created_by)
+- `idx_leases_created_by` on leases(created_by)
+
+`updated_by` is not indexed — it changes on every update and is not a typical filter.
+
+### Backfill:
+- `created_by` backfilled from earliest `action = 'create'` audit_log entry per record
+- `updated_by` backfilled from most recent audit_log entry per record
+- Records without matching audit entries remain NULL
+
+### Documentation updated:
+- `docs/database-schema-v2.md` — 5 table definitions, indexes section, design decision #10
+
+---
+
+## [2026-02-15] — Auto-update updated_at triggers
+
+**Migration:** `00006_updated_at_triggers.sql`
+**Status:** Pending — needs to be run by user via Supabase SQL Editor
+
+### Changes:
+- Created `public.set_updated_at()` trigger function (BEFORE UPDATE, sets `NEW.updated_at = NOW()`)
+- Applied BEFORE UPDATE triggers on 6 tables:
+  - `organizations`
+  - `portfolios`
+  - `properties`
+  - `spaces`
+  - `tenants`
+  - `leases`
+
+### Purpose:
+Ensures `updated_at` is always accurate on every UPDATE, regardless of whether the API layer explicitly sets it. Acts as a database-level safety net.
+
+### Notes:
+- The API layer still sets `updated_at` in its update calls for consistency, but the trigger guarantees correctness even if a direct SQL update is run
+- Does not apply to `picklist_definitions`, `custom_field_definitions`, `audit_log`, `data_imports`, or `scores` (these don't have `updated_at` or don't need auto-update)
+
+---
+
 ## Current State Summary (as of 2026-02-15)
 
 **Tables:** 12 (all created)
-**Indexes:** 34 (all created)
+**Indexes:** 39 (34 original + 5 created_by indexes)
 **Unique constraints:** 4 (all created)
 **RLS:** Enabled on all 12 data tables with org_id policies
 **System picklists:** 42 rows across 8 categories
 **Seed data:** Loaded — 1 org, 3 users, 1 portfolio, 10 properties, 79 spaces, 20 tenants, 70 leases, 10 audit entries
-**No schema changes since initial creation** — all recent work has been dashboard/frontend only
+**Schema changes:** 00005 added created_by/updated_by columns to 5 core entity tables

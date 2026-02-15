@@ -59,6 +59,8 @@ Collections of properties within an org.
 | name | text | |
 | description | text | |
 | metadata | jsonb | Custom fields |
+| created_by | uuid | FK → users, nullable. Set on insert. |
+| updated_by | uuid | FK → users, nullable. Set on every update. |
 | created_at | timestamp | |
 | updated_at | timestamp | |
 | deleted_at | timestamp | Nullable — soft delete |
@@ -87,6 +89,8 @@ Individual buildings/locations.
 | acquisition_price | decimal | |
 | current_value | decimal | |
 | metadata | jsonb | Custom fields |
+| created_by | uuid | FK → users, nullable. Set on insert. |
+| updated_by | uuid | FK → users, nullable. Set on every update. |
 | created_at | timestamp | |
 | updated_at | timestamp | |
 | deleted_at | timestamp | Nullable — soft delete |
@@ -107,6 +111,8 @@ Units/suites within a property.
 | status | text | References picklist (occupied, vacant, under_renovation, etc.) |
 | space_type | text | References picklist (retail, office, warehouse, etc.) |
 | metadata | jsonb | Custom fields |
+| created_by | uuid | FK → users, nullable. Set on insert. |
+| updated_by | uuid | FK → users, nullable. Set on every update. |
 | created_at | timestamp | |
 | updated_at | timestamp | |
 | deleted_at | timestamp | Nullable — soft delete |
@@ -129,6 +135,8 @@ Companies/entities — exists independently at the org level. Connected to space
 | credit_rating | text | References picklist |
 | parent_tenant_id | uuid | FK → tenants (self-ref for parent/subsidiary hierarchies) |
 | metadata | jsonb | Custom fields |
+| created_by | uuid | FK → users, nullable. Set on insert. |
+| updated_by | uuid | FK → users, nullable. Set on every update. |
 | created_at | timestamp | |
 | updated_at | timestamp | |
 | deleted_at | timestamp | Nullable — soft delete |
@@ -158,6 +166,8 @@ The many-to-many connector linking tenants to spaces and/or properties.
 | renewal_options | jsonb | Structured renewal terms |
 | terms | jsonb | Additional lease terms |
 | metadata | jsonb | Custom fields |
+| created_by | uuid | FK → users, nullable. Set on insert. |
+| updated_by | uuid | FK → users, nullable. Set on every update. |
 | created_at | timestamp | |
 | updated_at | timestamp | |
 | deleted_at | timestamp | Nullable — soft delete |
@@ -305,6 +315,17 @@ Speed up joins and lookups across related tables.
 | leases | `space_id` | All leases for a space |
 | leases | `tenant_id, status` | Active leases for a tenant (common dashboard query) |
 
+### User attribution (created_by)
+Supports "show me all records created by this user" queries for activity feeds and admin views. `updated_by` is not indexed — it changes on every update and is not a common filter criterion.
+
+| Table | Index | Purpose |
+|---|---|---|
+| portfolios | `created_by` | Records created by a specific user |
+| properties | `created_by` | Records created by a specific user |
+| spaces | `created_by` | Records created by a specific user |
+| tenants | `created_by` | Records created by a specific user |
+| leases | `created_by` | Records created by a specific user |
+
 ### Soft deletes
 Filter out deleted records efficiently in normal queries.
 
@@ -396,7 +417,10 @@ Tenants can have multiple leases across different properties and spaces over tim
 ### 9. Client-agnostic architecture
 The schema supports web, desktop, and MCP server clients equally. The audit log's `change_source` field tracks which client originated each change (ui, api, desktop, mcp, csv_import, google_sheets, system).
 
-### 10. Soft deletes preserve history
+### 10. User attribution on core entities
+Five core entity tables (portfolios, properties, spaces, tenants, leases) have `created_by` and `updated_by` columns (FK → users, nullable). These denormalize the "who created/last touched this?" query from the audit log onto the record itself for fast UI display. The audit log remains the source of truth for full change history; these columns are a read-performance optimization. Both are nullable to handle system-generated changes, bulk imports, and backfill gaps. **Organizations is intentionally excluded** — users FK to organizations, so the org must exist before its first user, creating a circular dependency that would force `created_by` to always be NULL at insert time.
+
+### 11. Soft deletes preserve history
 All core entity tables use `deleted_at` timestamps instead of hard deletes. Deleted records are filtered out of normal queries but preserved for historical reporting, scoring calculations, and recovery. The audit log captures soft deletes and restores.
 
 ---
