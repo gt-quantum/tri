@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { ApiError } from '@/lib/errors'
 import { getSupabase } from '@/lib/supabase'
+import { validateApiKey } from '@/lib/api-keys'
 
 /**
  * Authenticated user context attached to every API request.
@@ -28,14 +29,22 @@ export interface BasicAuthContext {
 /**
  * Extract and verify authenticated user from the request.
  *
- * Checks two sources in order:
- * 1. Authorization: Bearer <token> header (API clients, MCP, desktop)
- * 2. Supabase session cookies (browser clients)
+ * Checks three sources in order:
+ * 1. Authorization: Bearer sk_live_... → API key auth (hash + lookup)
+ * 2. Authorization: Bearer <JWT> → Supabase JWT verification
+ * 3. Supabase session cookies (browser clients)
  *
  * Requires the user to have org_id and role in their JWT app_metadata.
  * Throws UNAUTHORIZED if no valid session, FORBIDDEN if no org.
  */
 export async function getAuthContext(request: NextRequest): Promise<AuthContext> {
+  // Check for API key authentication first (sk_live_ prefix)
+  const authHeader = request.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer sk_')) {
+    const apiKey = authHeader.slice(7)
+    return validateApiKey(apiKey, request)
+  }
+
   const user = await verifyUser(request)
 
   const orgId = user.app_metadata?.org_id

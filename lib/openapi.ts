@@ -19,6 +19,13 @@ registry.registerComponent('securitySchemes', 'bearerAuth', {
     'Supabase Auth JWT token. Obtain by signing in via email/password or OAuth, then pass as `Authorization: Bearer <token>`. Tokens expire after ~1 hour; refresh via the Supabase SDK `auth.refreshSession()` method.',
 })
 
+registry.registerComponent('securitySchemes', 'apiKeyAuth', {
+  type: 'http',
+  scheme: 'bearer',
+  description:
+    'API key authentication. Create a key via the admin UI or `POST /api/v1/api-keys`, then pass it as `Authorization: Bearer sk_live_...`. Keys are long-lived (up to 1 year) and org-scoped with a configured role.',
+})
+
 // ─── Shared schemas ──────────────────────────────────────────────
 
 const ErrorResponse = z.object({
@@ -197,6 +204,36 @@ const Organization = z.object({
 })
 
 registry.register('Organization', Organization)
+
+const ApiKey = z.object({
+  id: z.string().uuid(),
+  org_id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  key_prefix: z.string(),
+  role: z.enum(['admin', 'manager', 'viewer']),
+  scopes: z.array(z.string()).nullable(),
+  created_by: z.string().uuid(),
+  created_by_name: z.string().nullable(),
+  created_by_email: z.string().nullable(),
+  last_used_at: z.string().datetime().nullable(),
+  expires_at: z.string().datetime(),
+  revoked_at: z.string().datetime().nullable(),
+  created_at: z.string().datetime(),
+  status: z.enum(['active', 'expired', 'revoked']),
+})
+
+registry.register('ApiKey', ApiKey)
+
+const ApiKeyWithPlaintext = ApiKey.omit({
+  created_by_name: true,
+  created_by_email: true,
+  status: true,
+}).extend({
+  key: z.string().openapi({ description: 'Plaintext API key — shown exactly once at creation. Store securely.' }),
+})
+
+registry.register('ApiKeyWithPlaintext', ApiKeyWithPlaintext)
 
 // ─── Helper to register list + detail + create + update + delete ─────
 
@@ -702,6 +739,164 @@ registry.registerPath({
   },
 })
 
+// ─── API Key management endpoints ─────────────────────────────────
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v1/api-keys',
+  summary: 'List API keys',
+  description:
+    'List all API keys for your organization. Returns key metadata (never plaintext keys or hashes). Excludes revoked keys by default — pass `?include_revoked=true` to include them. Requires admin role.',
+  responses: {
+    200: {
+      description: 'Paginated list of API keys',
+      content: {
+        'application/json': {
+          schema: z.object({ data: z.array(ApiKey), meta: PaginationMeta }),
+        },
+      },
+    },
+  },
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/v1/api-keys',
+  summary: 'Create API key',
+  description:
+    'Create a new API key. The plaintext key is returned exactly once in the response — store it securely. The key is SHA-256 hashed before storage and cannot be retrieved again. Default expiration is 90 days (max 365). Requires admin role.',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            name: z.string().openapi({ example: 'Zapier Integration' }),
+            description: z.string().optional().openapi({ example: 'Used by our Zapier workflow for lease updates' }),
+            role: z.enum(['admin', 'manager', 'viewer']).openapi({ example: 'manager' }),
+            expires_in_days: z.number().optional().openapi({ example: 90 }),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: 'API key created with plaintext key (shown once)',
+      content: {
+        'application/json': {
+          schema: z.object({ data: ApiKeyWithPlaintext, meta: SingleMeta }),
+        },
+      },
+    },
+    400: { description: 'Validation error', content: { 'application/json': { schema: ErrorResponse } } },
+  },
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v1/api-keys/{id}',
+  summary: 'Get API key details',
+  description: 'Get details of a specific API key. Never returns the plaintext key. Requires admin role.',
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+  },
+  responses: {
+    200: {
+      description: 'API key details',
+      content: {
+        'application/json': {
+          schema: z.object({ data: ApiKey, meta: SingleMeta }),
+        },
+      },
+    },
+    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponse } } },
+  },
+})
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/v1/api-keys/{id}',
+  summary: 'Update API key metadata',
+  description: 'Update name or description of an API key. Cannot change role, expiry, or the key itself — create a new key instead. Requires admin role.',
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            name: z.string().optional(),
+            description: z.string().nullable().optional(),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Updated API key',
+      content: {
+        'application/json': {
+          schema: z.object({ data: ApiKey.omit({ created_by_name: true, created_by_email: true, status: true }), meta: SingleMeta }),
+        },
+      },
+    },
+    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponse } } },
+    409: { description: 'Key is revoked', content: { 'application/json': { schema: ErrorResponse } } },
+  },
+})
+
+registry.registerPath({
+  method: 'delete',
+  path: '/api/v1/api-keys/{id}',
+  summary: 'Revoke API key',
+  description:
+    'Immediately revoke an API key. Any integrations using this key will lose access. The key record is preserved for audit purposes (soft revocation). Requires admin role.',
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+  },
+  responses: {
+    200: {
+      description: 'API key revoked',
+      content: {
+        'application/json': {
+          schema: z.object({
+            data: z.object({ id: z.string().uuid(), revoked: z.boolean(), name: z.string() }),
+            meta: SingleMeta,
+          }),
+        },
+      },
+    },
+    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponse } } },
+    409: { description: 'Already revoked', content: { 'application/json': { schema: ErrorResponse } } },
+  },
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/v1/api-keys/{id}/rotate',
+  summary: 'Rotate API key',
+  description:
+    'Revoke the current key and generate a new one with the same name, role, and description. The new plaintext key is returned exactly once. Requires admin role.',
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+  },
+  responses: {
+    201: {
+      description: 'New API key created (old key revoked)',
+      content: {
+        'application/json': {
+          schema: z.object({
+            data: ApiKeyWithPlaintext.extend({ rotated_from: z.string().uuid() }),
+            meta: SingleMeta,
+          }),
+        },
+      },
+    },
+    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponse } } },
+    409: { description: 'Key is already revoked', content: { 'application/json': { schema: ErrorResponse } } },
+  },
+})
+
 // ─── Generate spec ───────────────────────────────────────────────
 
 export function generateOpenApiSpec() {
@@ -716,13 +911,14 @@ export function generateOpenApiSpec() {
         '',
         '## Authentication',
         '',
-        'All endpoints require a **Supabase Auth JWT** unless marked otherwise. Send it as:',
+        'The API supports two authentication methods. Send either as a Bearer token:',
         '',
         '```',
-        'Authorization: Bearer <access_token>',
+        'Authorization: Bearer <access_token_or_api_key>',
         '```',
         '',
-        '**Obtaining a token:**',
+        '### Method 1: Supabase Auth JWT (interactive users)',
+        '',
         '1. Sign in via the Supabase Auth SDK (email/password, Google OAuth, or Microsoft OAuth)',
         '2. Extract the `access_token` from the session: `session.access_token`',
         '3. Pass it in the Authorization header on every API request',
@@ -733,6 +929,26 @@ export function generateOpenApiSpec() {
         '- Browser clients get automatic refresh via session cookies and middleware',
         '',
         '**JWT claims:** The token contains `org_id` and `role` in `app_metadata`. These are used for org-scoped data access and role enforcement — no additional headers needed.',
+        '',
+        '### Method 2: API Keys (integrations & MCP)',
+        '',
+        'For programmatic access (integrations, MCP servers, scripts):',
+        '',
+        '1. Create an API key via `POST /api/v1/api-keys` or the Settings > API Keys UI (admin only)',
+        '2. Store the key securely — it is shown exactly once at creation',
+        '3. Pass it as: `Authorization: Bearer sk_live_...`',
+        '',
+        '**Key features:**',
+        '- Long-lived (up to 365 days) with mandatory expiration',
+        '- Org-scoped with a configured role (admin/manager/viewer)',
+        '- One-click rotation: revoke old key + generate new one',
+        '- SHA-256 hashed at rest — plaintext never stored',
+        '- All operations are fully audited',
+        '',
+        '**Best practices:**',
+        '- Use the minimum required role (prefer viewer or manager over admin)',
+        '- Set the `X-Change-Source` header to identify your integration (e.g., `mcp`, `google_sheets`)',
+        '- Rotate keys periodically and before team member departures',
         '',
         '## Roles',
         '',
@@ -752,6 +968,6 @@ export function generateOpenApiSpec() {
       ].join('\n'),
     },
     servers: [{ url: '/' }],
-    security: [{ bearerAuth: [] }],
+    security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
   })
 }

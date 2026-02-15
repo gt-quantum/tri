@@ -26,9 +26,9 @@ Multi-tenant platform for real estate organizations — including REITs, propert
 - Full schema documentation: `docs/database-schema-v2.md`
 - **Database change log: `docs/database-log.md`** — Every DB change is tracked here. Always update this file after any migration or DB modification.
 
-## Tables (13)
+## Tables (14)
 **Core Entities:** organizations, users, portfolios, properties, spaces, tenants, leases
-**Auth:** invitations
+**Auth:** invitations, api_keys
 **Configuration:** picklist_definitions, custom_field_definitions
 **Tracking:** audit_log, data_imports, scores
 
@@ -50,7 +50,8 @@ tenants + spaces/properties → leases (many-to-many via leases)
 - `lib/supabase.ts` — Server-side Supabase admin client (service_role key, bypasses RLS)
 - `lib/supabase-browser.ts` — Browser Supabase client (anon key, for auth UI)
 - `lib/supabase-server.ts` — Server Supabase client with cookie support (for SSR auth)
-- `lib/auth.ts` — Auth middleware (Supabase Auth JWT verification via Bearer token or cookies)
+- `lib/auth.ts` — Auth middleware (API key, JWT Bearer token, or session cookies)
+- `lib/api-keys.ts` — API key generation, hashing, and validation utilities
 - `lib/errors.ts` — Consistent error codes and response format
 - `lib/response.ts` — Standard response envelopes (single item, paginated list)
 - `lib/audit.ts` — Audit logging utilities (create, update, soft-delete)
@@ -60,8 +61,12 @@ tenants + spaces/properties → leases (many-to-many via leases)
 - `middleware.ts` — Next.js middleware for route protection (login redirect, onboarding redirect, session refresh)
 
 ### Authentication
-- **JWT-based:** `getAuthContext(request)` verifies Supabase JWT from `Authorization: Bearer <token>` header or session cookies
-- **`getBasicAuthContext(request)`** — for pre-org endpoints (e.g., create-org during onboarding)
+- **Three auth methods** in priority order:
+  1. `Authorization: Bearer sk_live_...` — API key auth (hash → lookup → verify expiry/revocation)
+  2. `Authorization: Bearer <JWT>` — Supabase JWT verification
+  3. Session cookies — browser clients (automatic via middleware)
+- **`getAuthContext(request)`** — main entry point, checks all three methods
+- **`getBasicAuthContext(request)`** — for pre-org endpoints (e.g., create-org during onboarding, no API key support)
 - **JWT app_metadata:** Contains `org_id` and `role` — no DB lookup needed per request
 - **Three Supabase clients:** admin (service_role, bypasses RLS), server (anon, cookies), browser (anon, client-side)
 - **Env vars:** `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (server), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (browser)
@@ -149,6 +154,14 @@ Every endpoint follows these patterns:
 - `POST /api/v1/users/:id/deactivate` — Soft-delete user (admin only, prevents self-deactivation)
 - `POST /api/v1/users/:id/reactivate` — Restore soft-deleted user (admin only)
 
+**API Keys** — `lib/schemas/api-keys.ts`
+- `GET /api/v1/api-keys` — List all API keys (admin only; excludes revoked by default, `?include_revoked=true`)
+- `POST /api/v1/api-keys` — Create API key (admin only; returns plaintext key once; default 90 days, max 365)
+- `GET /api/v1/api-keys/:id` — Get key details (admin only; never returns plaintext)
+- `PATCH /api/v1/api-keys/:id` — Update key metadata (name, description only; admin only)
+- `DELETE /api/v1/api-keys/:id` — Revoke key (admin only; immediate, soft revocation)
+- `POST /api/v1/api-keys/:id/rotate` — Rotate key (admin only; revokes old, creates new with same metadata)
+
 **System & Docs**
 - `GET /api/v1/health` — Health check
 - `GET /api/v1/schema` — Full data model discovery (manager+; entities, fields, relationships, picklist values, custom fields, conventions)
@@ -161,6 +174,7 @@ Every endpoint follows these patterns:
 - `/onboarding` — Create organization form (authenticated, no org)
 - `/auth/callback` — OAuth redirect handler
 - `/settings/team` — Team management (users, invitations, roles)
+- `/settings/api-keys` — API key management (create, rotate, revoke; admin only)
 
 ### Error Format
 ```json
@@ -184,6 +198,7 @@ Every endpoint follows these patterns:
 - `/property/[id]` — Property detail (spaces, active leases, lease history)
 - `/tenant/[id]` — Tenant detail (parent/subsidiary, portfolio footprint, leases)
 - `/settings/team` — Team management (users, invitations, roles)
+- `/settings/api-keys` — API key management (admin only)
 - `/login`, `/signup`, `/onboarding`, `/auth/callback` — Auth flow
 
 ### Dashboard Components (`components/dashboard/`)

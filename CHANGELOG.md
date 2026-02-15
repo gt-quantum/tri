@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — API Key Management & MCP Enablement
+
+### Added
+- **`api_keys` table** (migration `00008_api_keys.sql`) — SHA-256 hashed key storage with mandatory expiration (max 1 year), role-based permissions, soft revocation, and last-used tracking (IP + timestamp)
+- **API key authentication** — Third auth path in `getAuthContext()`: detects `sk_live_` prefix, hashes → looks up → verifies expiry/revocation → returns AuthContext. Works on all existing endpoints with zero endpoint changes.
+- **6 new API endpoints** (admin only):
+  - `GET /api/v1/api-keys` — List keys (excludes revoked by default)
+  - `POST /api/v1/api-keys` — Create key (returns plaintext once)
+  - `GET /api/v1/api-keys/:id` — Get key details
+  - `PATCH /api/v1/api-keys/:id` — Update name/description
+  - `DELETE /api/v1/api-keys/:id` — Revoke key (immediate, soft)
+  - `POST /api/v1/api-keys/:id/rotate` — Rotate (revoke old + create new)
+- **Settings UI** at `/settings/api-keys` — Create, rotate, revoke keys with one-time plaintext display, copy-to-clipboard, expiration warnings, and status badges
+- **Navigation links** — API Keys in dashboard header nav + Team settings page
+- **OpenAPI spec** — `apiKeyAuth` security scheme, 6 endpoint definitions, updated auth documentation covering both JWT and API key methods
+- **New utility module** `lib/api-keys.ts` — generateApiKey(), hashApiKey(), extractKeyPrefix(), validateApiKey()
+- **Zod schemas** `lib/schemas/api-keys.ts` — Create, update, and list query schemas
+- **Full audit logging** — All key operations (create, update, revoke, rotate) logged to audit_log; never logs plaintext keys
+
+### Security
+- Keys are `sk_live_` + 32 hex chars (128 bits entropy), SHA-256 hashed before storage
+- Plaintext shown exactly once at creation, never retrievable again
+- Mandatory expiration with max 365 days
+- `last_used_at` and `last_used_ip` updated on every API call (fire-and-forget)
+- RLS policies on api_keys table, org-scoped like all other tables
+
+### MCP Enablement
+- API keys provide the authentication mechanism for MCP servers
+- MCP server authenticates with `Authorization: Bearer sk_live_...` and `X-Change-Source: mcp`
+- No additional endpoints needed — existing API + schema discovery + OpenAPI spec are sufficient
+
+---
+
 ## [2026-02-15] — OpenAPI Documentation: Auth Endpoints & Security Scheme
 
 ### Added

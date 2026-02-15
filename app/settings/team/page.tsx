@@ -276,6 +276,17 @@ export default function TeamPage() {
           <p className="font-body text-warm-300 text-sm mt-1">
             {activeUsers.length} active member
             {activeUsers.length !== 1 ? 's' : ''}
+            {isAdmin && (
+              <>
+                {' '}&middot;{' '}
+                <button
+                  onClick={() => router.push('/settings/api-keys')}
+                  className="text-brass/70 hover:text-brass transition-colors"
+                >
+                  Manage API Keys
+                </button>
+              </>
+            )}
           </p>
         </div>
         {isAdmin && (

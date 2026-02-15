@@ -80,6 +80,12 @@ export default function Home() {
             >
               Team
             </Link>
+            <Link
+              href="/settings/api-keys"
+              className="font-body text-sm text-warm-300 hover:text-warm-white transition-colors"
+            >
+              API Keys
+            </Link>
             <a
               href="/api/v1/docs"
               className="font-body text-sm text-warm-300 hover:text-warm-white transition-colors"

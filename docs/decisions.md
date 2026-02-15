@@ -360,3 +360,42 @@ A security audit of the API layer revealed several data exposure issues:
 - **Manager for schema (not admin):** MCP/AI agents authenticate as `manager` role. Restricting schema to admin-only would break AI-forward use cases. Manager provides a reasonable middle ground — it keeps sensitive structural information away from viewer-level users while enabling automation.
 - **Manager for user list:** Viewing the full org member list (emails, roles) is an administrative function. Viewers interacting with the dashboard don't need to see other users.
 - **Token security:** Invitation tokens are equivalent to single-use passwords. Exposing them in list/update responses means any admin/manager could see tokens intended for specific invitees, enabling impersonation.
+
+---
+
+## ADR-020: API Key Authentication for Integrations & MCP
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+The platform needs programmatic API access for:
+1. **Custom integrations** — Zapier, Google Sheets, internal scripts
+2. **MCP servers** — AI agents accessing the API via the Model Context Protocol
+3. **Third-party tools** — Any system that needs authenticated API access without interactive login
+
+Supabase Auth JWTs expire after ~1 hour and require an interactive login flow (email/password or OAuth). This doesn't work for long-running integrations or server-to-server communication.
+
+### Decision
+Implement a dedicated `api_keys` table with SHA-256 hashed keys that authenticate through the existing `getAuthContext()` flow as a third authentication path alongside JWT and session cookies.
+
+### Key Design Choices
+
+**SHA-256 over bcrypt:** API keys have 128 bits of entropy (32 hex chars), unlike user passwords which have low entropy and need slow hashing. SHA-256 is appropriate and fast for high-entropy secrets.
+
+**Creator identity for audit trail:** API key requests use the key creator's `userId` in the AuthContext. This means all mutations made via an API key are traceable to the admin who created it, providing accountability.
+
+**Key-level role (not creator's role):** The API key has its own `role` field (viewer/manager/admin). This follows the principle of least privilege — an admin can create a viewer-only key for read-only integrations. The key's role is checked independently of the creator's current role.
+
+**`sk_live_` prefix detection:** The auth middleware detects API keys by the `sk_` prefix in the Bearer token. This avoids attempting Supabase JWT verification on API keys (which would fail and add latency).
+
+**Fire-and-forget usage tracking:** `last_used_at` and `last_used_ip` are updated asynchronously on every API call, providing SOC2-aligned monitoring without slowing down requests.
+
+**Mandatory expiration (max 1 year):** All keys must expire. This prevents forgotten keys from providing indefinite access and aligns with SOC2 key rotation requirements.
+
+**Soft revocation:** Revoking a key sets `revoked_at` and `revoked_by` rather than deleting the row. This preserves the audit trail — you can always see which keys existed, who created them, and when they were revoked.
+
+### Alternatives Considered
+- **OAuth 2.0 Client Credentials:** More complex, requires a separate token exchange flow. API keys are simpler and sufficient for current needs.
+- **Supabase service_role key per integration:** Single key for everything, no per-integration permissions or revocation. Unacceptable for multi-tenant security.
+- **Personal access tokens (PATs):** Tied to a user's session, expire with the user. API keys are org-scoped and persist beyond individual user deactivation.

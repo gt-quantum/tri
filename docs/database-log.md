@@ -224,14 +224,62 @@ Ensures `updated_at` is always accurate on every UPDATE, regardless of whether t
 
 ---
 
+## [2026-02-15] — API Key Management
+
+**Migration:** `00008_api_keys.sql`
+**Status:** Pending — run in Supabase SQL Editor
+
+### New table: api_keys
+- `id` (uuid PK, gen_random_uuid())
+- `org_id` (uuid FK → organizations) — tenant isolation
+- `name` (text NOT NULL) — human-readable label
+- `description` (text) — optional notes
+- `key_prefix` (varchar(12) NOT NULL) — first 12 chars for display (e.g., `sk_live_a3b4`)
+- `key_hash` (varchar(64) NOT NULL UNIQUE) — SHA-256 hash of full key
+- `role` (user_role NOT NULL DEFAULT 'viewer') — permission level
+- `scopes` (text[]) — future fine-grained permissions (nullable)
+- `created_by` (uuid FK → users) — admin who created the key
+- `last_used_at` (timestamptz) — updated on each API call
+- `last_used_ip` (inet) — IP of last request
+- `expires_at` (timestamptz NOT NULL) — mandatory expiration
+- `revoked_at` (timestamptz) — soft-revoke timestamp
+- `revoked_by` (uuid FK → users) — who revoked it
+- `created_at` (timestamptz NOT NULL DEFAULT now())
+- `updated_at` (timestamptz NOT NULL DEFAULT now())
+
+### Constraints:
+- `api_keys_expires_after_created`: CHECK (expires_at > created_at)
+- `api_keys_prefix_min_length`: CHECK (char_length(key_prefix) >= 8)
+
+### Indexes added (3):
+- `idx_api_keys_key_hash` — UNIQUE on key_hash (primary lookup)
+- `idx_api_keys_org_id` — for listing keys by org
+- `idx_api_keys_key_prefix` — for display/identification
+
+### RLS:
+- SELECT, INSERT, UPDATE policies scoped to `public.user_org_id()`
+- RLS enabled on api_keys table
+
+### Trigger:
+- `set_api_keys_updated_at` — BEFORE UPDATE, reuses `public.set_updated_at()`
+
+### Security model:
+- Keys follow format: `sk_live_` + 32 random hex chars (128 bits entropy)
+- Full key SHA-256 hashed before storage; plaintext shown once at creation
+- Auth middleware detects `sk_` prefix and routes to API key validation
+- API key auth returns creator's identity for audit trail
+- Key's `role` field determines permissions (not creator's current role)
+
+---
+
 ## Current State Summary (as of 2026-02-15)
 
-**Tables:** 13 (12 original + invitations)
-**Indexes:** 43 (39 previous + 4 invitations indexes)
-**Unique constraints:** 4 (unchanged)
-**RLS:** Enabled on all 13 data tables with org_id policies
+**Tables:** 14 (12 original + invitations + api_keys)
+**Indexes:** 46 (43 previous + 3 api_keys indexes)
+**Unique constraints:** 5 (4 previous + api_keys key_hash unique)
+**RLS:** Enabled on all 14 data tables with org_id policies
 **System picklists:** 42 rows across 8 categories
 **Seed data:** Loaded — 1 org, 3 original users + 2 auth users, 1 portfolio, 10 properties, 79 spaces, 20 tenants, 70 leases, 10 audit entries
-**Triggers:** 7 (6 BEFORE UPDATE on core tables + 1 AFTER INSERT on auth.users for signup handling)
+**Triggers:** 8 (7 previous + 1 BEFORE UPDATE on api_keys)
 **Functions:** `public.user_org_id()` (updated for JWT claims), `public.set_updated_at()`, `public.handle_new_user()`
-**Schema changes:** 00007 adds invitations table, auth columns to users/organizations, auth trigger, updated user_org_id()
+**Schema changes:** 00008 adds api_keys table with SHA-256 hashed key storage, role-based permissions, mandatory expiration, and soft revocation
