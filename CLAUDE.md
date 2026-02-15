@@ -173,10 +173,39 @@ Every endpoint follows these patterns:
 }
 ```
 
+## Dashboard & Frontend Pages
+
+**Framework:** Next.js 15 App Router (same project as API)
+**Data fetching:** Authenticated API calls via `useDashboardData()` hook (`lib/use-dashboard-data.ts`)
+
+### Pages
+- `/` — Main dashboard (Analytics / Data tabs, summary cards, navigation)
+- `/property/[id]` — Property detail (spaces, active leases, lease history)
+- `/tenant/[id]` — Tenant detail (parent/subsidiary, portfolio footprint, leases)
+- `/settings/team` — Team management (users, invitations, roles)
+- `/login`, `/signup`, `/onboarding`, `/auth/callback` — Auth flow
+
+### Dashboard Components (`components/dashboard/`)
+- `SummaryCards.tsx` — 5 KPI cards (portfolio value, revenue, occupancy, vacancies, avg lease term)
+- `LeaseExpirationChart.tsx` — Recharts ComposedChart (24-month risk tiers)
+- `RevenueConcentration.tsx` — Recharts PieChart donut + HHI concentration index
+- `RentRollProjection.tsx` — Recharts AreaChart (18-month revenue projection)
+- `PropertyMap.tsx` — Leaflet map with brass markers (loaded with `dynamic()`, SSR disabled)
+- `PropertiesTable.tsx` — Sortable properties table with occupancy bars
+- `TenantOverview.tsx` — Tenant table with parent/subsidiary grouping
+- `LeaseTimeline.tsx` — Filterable lease timeline with category filters
+- `VacancyView.tsx` — Vacant spaces grouped by property
+
+### Key Patterns
+- `useDashboardData()` — shared hook for auth + data fetching, used by all 3 main pages
+- Leaflet requires `dynamic(() => import(...), { ssr: false })` for SSR safety
+- react-leaflet pinned to v4 (v5 requires React 19)
+- All data comes through `/api/v1/` routes (not direct Supabase queries)
+
 ## Legacy Dashboard (v1)
 
 **Location:** `dashboard-v1/` — run with `cd dashboard-v1 && npm run dev`
-Connects directly to Supabase via service_role key. Being replaced by the Next.js app.
+Connects directly to Supabase via service_role key. **Superseded** by the Next.js dashboard above. Preserved for reference but no longer deployed.
 
 ### Deployment
 - Vercel config: `vercel.json` at repo root (now configured for Next.js)

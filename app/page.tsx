@@ -1,142 +1,85 @@
 'use client'
 
-import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import dynamic from 'next/dynamic'
+import Link from 'next/link'
+import { useDashboardData } from '@/lib/use-dashboard-data'
+import SummaryCards from '@/components/dashboard/SummaryCards'
+import LeaseExpirationChart from '@/components/dashboard/LeaseExpirationChart'
+import RevenueConcentration from '@/components/dashboard/RevenueConcentration'
+import RentRollProjection from '@/components/dashboard/RentRollProjection'
+import PropertiesTable from '@/components/dashboard/PropertiesTable'
+import TenantOverview from '@/components/dashboard/TenantOverview'
+import LeaseTimeline from '@/components/dashboard/LeaseTimeline'
+import VacancyView from '@/components/dashboard/VacancyView'
 
-interface UserInfo {
-  email: string
-  fullName: string
-  role: string
-  orgId: string
-}
+const PropertyMap = dynamic(() => import('@/components/dashboard/PropertyMap'), {
+  ssr: false,
+  loading: () => <div className="card-surface rounded-lg" style={{ height: '420px' }} />,
+})
+
+const TABS = [
+  {
+    key: 'analytics',
+    label: 'Analytics',
+    icon: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z',
+  },
+  {
+    key: 'data',
+    label: 'Data',
+    icon: 'M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125M10.875 12c-.621 0-1.125.504-1.125 1.125M12 12c0 .621.504 1.125 1.125 1.125m0-1.5c.621 0 1.125.504 1.125 1.125m-3.375 1.5c0 .621.504 1.125 1.125 1.125h1.5c.621 0 1.125-.504 1.125-1.125m-3.75 0v1.5c0 .621.504 1.125 1.125 1.125m2.625-2.625c0 .621.504 1.125 1.125 1.125',
+  },
+]
 
 export default function Home() {
-  const router = useRouter()
-  const [supabase] = useState(() => createSupabaseBrowserClient())
-  const [user, setUser] = useState<UserInfo | null>(null)
-  const [orgName, setOrgName] = useState<string | null>(null)
-  const [stats, setStats] = useState<{
-    properties: number
-    tenants: number
-    leases: number
-    spaces: number
-  } | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session) {
-        router.push('/login')
-        return
-      }
-
-      const u = session.user
-      const orgId = u.app_metadata?.org_id
-
-      if (!orgId) {
-        router.push('/onboarding')
-        return
-      }
-
-      setUser({
-        email: u.email!,
-        fullName:
-          u.user_metadata?.full_name || u.user_metadata?.name || u.email!,
-        role: u.app_metadata?.role || 'viewer',
-        orgId,
-      })
-
-      // Fetch org name and stats
-      const headers = { Authorization: `Bearer ${session.access_token}` }
-
-      try {
-        const [propsRes, tenantsRes, leasesRes, spacesRes] = await Promise.all([
-          fetch('/api/v1/properties?limit=1', { headers }),
-          fetch('/api/v1/tenants?limit=1', { headers }),
-          fetch('/api/v1/leases?limit=1', { headers }),
-          fetch('/api/v1/spaces?limit=1', { headers }),
-        ])
-
-        const [propsData, tenantsData, leasesData, spacesData] =
-          await Promise.all([
-            propsRes.ok ? propsRes.json() : null,
-            tenantsRes.ok ? tenantsRes.json() : null,
-            leasesRes.ok ? leasesRes.json() : null,
-            spacesRes.ok ? spacesRes.json() : null,
-          ])
-
-        setStats({
-          properties: propsData?.meta?.total ?? 0,
-          tenants: tenantsData?.meta?.total ?? 0,
-          leases: leasesData?.meta?.total ?? 0,
-          spaces: spacesData?.meta?.total ?? 0,
-        })
-
-        // Get org name from first property's portfolio or direct query
-        if (propsData?.data?.[0]) {
-          // We have data — try to get org name from schema endpoint
-          const schemaRes = await fetch('/api/v1/schema', { headers })
-          if (schemaRes.ok) {
-            const schema = await schemaRes.json()
-            setOrgName(schema.data?.organization?.name || null)
-          }
-        }
-      } catch {
-        // Stats failed — still show page
-      }
-
-      setLoading(false)
-    }
-
-    load()
-  }, [supabase, router])
-
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
+  const { data, user, orgName, loading, error, logout } = useDashboardData()
+  const [activeTab, setActiveTab] = useState('analytics')
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-warm-300 font-body text-sm animate-fade-in">
-          Loading...
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
+        <p className="font-body text-warm-300 text-sm tracking-wide">Loading portfolio data...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="card-surface max-w-md p-8 text-center">
+          <h2 className="font-display text-lg text-warm-white mb-2">Connection Failed</h2>
+          <p className="text-warm-300 text-sm">{error}</p>
         </div>
       </div>
     )
   }
 
+  if (!data) return null
+
+  const portfolioName = data.portfolios?.[0]?.name || ''
+
   return (
     <div className="min-h-screen">
       {/* Top Nav */}
       <header className="border-b border-brass-faint">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="font-display text-lg text-warm-white tracking-wide">
-              TRI Platform
-            </h1>
+            <h1 className="font-display text-lg text-warm-white tracking-wide">TRI Platform</h1>
             {orgName && (
               <>
                 <div className="w-px h-5 bg-brass-faint" />
-                <span className="font-body text-sm text-warm-300">
-                  {orgName}
-                </span>
+                <span className="font-body text-sm text-warm-300">{orgName}</span>
               </>
             )}
           </div>
-
           <div className="flex items-center gap-4">
-            <a
+            <Link
               href="/settings/team"
               className="font-body text-sm text-warm-300 hover:text-warm-white transition-colors"
             >
               Team
-            </a>
+            </Link>
             <a
               href="/api/v1/docs"
               className="font-body text-sm text-warm-300 hover:text-warm-white transition-colors"
@@ -146,15 +89,11 @@ export default function Home() {
             <div className="w-px h-5 bg-brass-faint" />
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="font-body text-sm text-warm-white">
-                  {user?.fullName}
-                </div>
-                <div className="font-body text-[11px] text-warm-300">
-                  {user?.role}
-                </div>
+                <div className="font-body text-sm text-warm-white">{user?.fullName}</div>
+                <div className="font-body text-[11px] text-warm-300">{user?.role}</div>
               </div>
               <button
-                onClick={handleLogout}
+                onClick={logout}
                 className="px-3 py-1.5 rounded-lg border border-brass-faint text-warm-300 font-body text-xs
                   hover:border-brass/20 hover:text-warm-white transition-colors"
               >
@@ -165,113 +104,146 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h2 className="font-display text-2xl text-warm-white tracking-wide mb-2">
-            Dashboard
-          </h2>
-          <p className="font-body text-warm-300 text-sm">
-            Welcome back, {user?.fullName}
-          </p>
+      {/* Top accent line */}
+      <div className="h-px bg-gradient-to-r from-transparent via-brass/40 to-transparent" />
+
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-8">
+        {/* Header */}
+        <header className="mb-10 animate-fade-up">
+          <div className="mb-1">
+            <h2 className="font-display text-3xl text-warm-white tracking-wide">
+              {orgName || 'Portfolio'}
+            </h2>
+          </div>
+          {portfolioName && (
+            <p className="font-body text-warm-300 text-sm tracking-wide">{portfolioName} Overview</p>
+          )}
+        </header>
+
+        {/* Summary Cards */}
+        <div className="animate-fade-up stagger-1">
+          <SummaryCards data={data} />
         </div>
 
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <StatCard label="Properties" value={stats.properties} />
-            <StatCard label="Spaces" value={stats.spaces} />
-            <StatCard label="Tenants" value={stats.tenants} />
-            <StatCard label="Active Leases" value={stats.leases} />
+        {/* Tab Navigation */}
+        <div className="mt-10 mb-8 animate-fade-up stagger-2">
+          <div className="flex items-center gap-1 border-b border-brass-faint">
+            {TABS.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-body font-medium tracking-wide transition-all relative ${
+                  activeTab === tab.key ? 'text-brass' : 'text-warm-400 hover:text-warm-200'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
+                </svg>
+                {tab.label}
+                {activeTab === tab.key && <div className="absolute bottom-0 left-0 right-0 h-px bg-brass" />}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-12 animate-fade-up">
+            <section>
+              <div className="flex items-center gap-4 mb-5">
+                <h2 className="section-heading">Lease Expiration Risk</h2>
+                <div className="flex-1 brass-line" />
+                <span className="text-warm-400 text-xs font-body tabular">24-month outlook</span>
+              </div>
+              <LeaseExpirationChart data={data} />
+            </section>
+
+            <section>
+              <div className="flex items-center gap-4 mb-5">
+                <h2 className="section-heading">Tenant Diversification</h2>
+                <div className="flex-1 brass-line" />
+                <span className="text-warm-400 text-xs font-body tabular">
+                  {data.leases.filter((l: any) => l.status === 'active').length} active leases
+                </span>
+              </div>
+              <RevenueConcentration data={data} />
+            </section>
+
+            <section>
+              <div className="flex items-center gap-4 mb-5">
+                <h2 className="section-heading">Revenue Forecast</h2>
+                <div className="flex-1 brass-line" />
+                <span className="text-warm-400 text-xs font-body tabular">18-month projection</span>
+              </div>
+              <RentRollProjection data={data} />
+            </section>
+
+            <section>
+              <div className="flex items-center gap-4 mb-5">
+                <h2 className="section-heading">Portfolio Map</h2>
+                <div className="flex-1 brass-line" />
+                <span className="text-warm-400 text-xs font-body tabular">
+                  {data.properties.filter((p: any) => p.lat && p.lng).length} locations
+                </span>
+              </div>
+              <PropertyMap data={data} />
+            </section>
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <QuickAction
-            title="Properties"
-            description="View and manage your property portfolio"
-            href="/api/v1/properties"
-            apiLink
-          />
-          <QuickAction
-            title="Tenants"
-            description="Manage tenant relationships"
-            href="/api/v1/tenants"
-            apiLink
-          />
-          <QuickAction
-            title="Team Settings"
-            description="Manage users and invitations"
-            href="/settings/team"
-          />
-        </div>
+        {/* Data Tab */}
+        {activeTab === 'data' && (
+          <div className="space-y-12 animate-fade-up">
+            <section>
+              <div className="flex items-center gap-4 mb-5">
+                <h2 className="section-heading">Properties</h2>
+                <div className="flex-1 brass-line" />
+                <span className="text-warm-400 text-xs font-body tabular">{data.properties.length} assets</span>
+              </div>
+              <PropertiesTable data={data} />
+            </section>
 
-        {/* API Info */}
-        <div className="mt-12 card-surface p-6">
-          <h3 className="font-display text-lg text-warm-white mb-3">
-            API Access
-          </h3>
-          <p className="font-body text-sm text-warm-300 mb-4">
-            All data is accessible via the REST API. The interactive
-            documentation includes every endpoint, schema, and example.
-          </p>
-          <div className="flex gap-3">
-            <a
-              href="/api/v1/docs"
-              className="px-4 py-2 rounded-lg bg-brass/10 border border-brass-faint text-brass font-body text-sm
-                hover:bg-brass/15 hover:border-brass/20 transition-colors"
-            >
-              API Documentation
-            </a>
-            <a
-              href="/api/v1/schema"
-              className="px-4 py-2 rounded-lg border border-brass-faint text-warm-300 font-body text-sm
-                hover:border-brass/20 hover:text-warm-white transition-colors"
-            >
-              Schema Discovery
-            </a>
+            <section>
+              <div className="flex items-center gap-4 mb-5">
+                <h2 className="section-heading">Tenants</h2>
+                <div className="flex-1 brass-line" />
+                <span className="text-warm-400 text-xs font-body tabular">{data.tenants.length} companies</span>
+              </div>
+              <TenantOverview data={data} />
+            </section>
+
+            <section>
+              <div className="flex items-center gap-4 mb-5">
+                <h2 className="section-heading">Lease Expirations</h2>
+                <div className="flex-1 brass-line" />
+                <span className="text-warm-400 text-xs font-body tabular">{data.leases.length} leases</span>
+              </div>
+              <LeaseTimeline data={data} />
+            </section>
+
+            <section>
+              <div className="flex items-center gap-4 mb-5">
+                <h2 className="section-heading">Vacancies</h2>
+                <div className="flex-1 brass-line" />
+                <span className="text-warm-400 text-xs font-body tabular">
+                  {data.spaces.filter((s: any) => s.status === 'vacant').length} open
+                </span>
+              </div>
+              <VacancyView data={data} />
+            </section>
           </div>
-        </div>
-      </main>
-    </div>
-  )
-}
+        )}
 
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="card-surface p-4">
-      <div className="font-body text-[11px] uppercase tracking-[0.12em] text-warm-300 mb-1">
-        {label}
+        <div className="h-16" />
       </div>
-      <div className="font-display text-2xl text-warm-white tabular">
-        {value}
+
+      {/* Bottom accent */}
+      <div className="h-px bg-gradient-to-r from-transparent via-brass/20 to-transparent" />
+      <div className="text-center py-6">
+        <p className="text-warm-500 text-[10px] font-body uppercase tracking-[0.2em]">
+          {orgName || 'Portfolio'} &middot; Portfolio Intelligence
+        </p>
       </div>
     </div>
-  )
-}
-
-function QuickAction({
-  title,
-  description,
-  href,
-  apiLink,
-}: {
-  title: string
-  description: string
-  href: string
-  apiLink?: boolean
-}) {
-  return (
-    <a
-      href={href}
-      target={apiLink ? '_blank' : undefined}
-      className="card-surface-hover p-5 block"
-    >
-      <h4 className="font-body text-sm font-semibold text-warm-white mb-1">
-        {title}
-      </h4>
-      <p className="font-body text-xs text-warm-300">{description}</p>
-    </a>
   )
 }

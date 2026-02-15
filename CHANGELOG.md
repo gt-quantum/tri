@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Dashboard Port: Analytics & Detail Pages in Next.js
+
+### Added
+- **Shared data hook** (`lib/use-dashboard-data.ts`):
+  - Authenticated data fetching via API (Bearer token from Supabase session)
+  - Fetches properties, spaces, tenants, leases, portfolios in parallel
+  - Handles unauthenticated (redirect to `/login`) and no-org (redirect to `/onboarding`) states
+  - Exports `PortfolioData` and `UserInfo` TypeScript interfaces
+  - Used by all three pages (dashboard, property detail, tenant detail)
+- **9 dashboard components** (`components/dashboard/`):
+  - `SummaryCards.tsx` — 5 KPI cards (portfolio value, revenue, occupancy, vacancies, avg lease term)
+  - `PropertiesTable.tsx` — Sortable properties table with occupancy bars, Next.js links
+  - `TenantOverview.tsx` — Tenant table with parent/subsidiary grouping, credit badges
+  - `LeaseTimeline.tsx` — Filterable lease timeline with status bars and category filters
+  - `VacancyView.tsx` — Vacant spaces grouped by property with negotiation details
+  - `LeaseExpirationChart.tsx` — Recharts ComposedChart (stacked bars by risk tier + lease count line)
+  - `RevenueConcentration.tsx` — Recharts PieChart donut + HHI concentration index
+  - `RentRollProjection.tsx` — Recharts AreaChart with contracted/escalated/floor revenue lines
+  - `PropertyMap.tsx` — Leaflet map with custom brass SVG markers and themed popups
+- **Property detail page** (`app/property/[id]/page.tsx`):
+  - Spaces table, active leases, lease history, summary cards
+  - Cross-links to tenant detail pages
+- **Tenant detail page** (`app/tenant/[id]/page.tsx`):
+  - Parent/subsidiary info, portfolio footprint, leases table
+  - Cross-links to property detail pages
+- **New dependencies:** `recharts`, `leaflet`, `react-leaflet@4`, `@types/leaflet`
+
+### Changed
+- **`app/page.tsx`** — Rewritten from simple stats page to full analytics dashboard:
+  - Tab navigation (Analytics / Data) matching dashboard-v1 layout
+  - Analytics tab: lease expiration risk, tenant diversification, revenue forecast, portfolio map
+  - Data tab: properties table, tenants overview, lease timeline, vacancies
+  - Top nav with org name, user info, Team/API Docs links, logout
+  - PropertyMap loaded with `dynamic(() => import(...), { ssr: false })` for SSR safety
+- **`app/globals.css`** — Added Leaflet popup CSS overrides for dark theme
+
+### Design Decisions
+- **API-based data fetching (not direct Supabase):** Dashboard fetches via authenticated API routes, maintaining the three-layer security model (RLS → API → UI)
+- **Shared `useDashboardData()` hook:** All pages share one hook to avoid code duplication. Fetches all entities once, filters client-side for detail pages
+- **react-leaflet v4 (not v5):** v5 requires React 19; project uses React 18
+- **SSR-safe map loading:** Leaflet requires `window`, so PropertyMap uses Next.js `dynamic()` with `ssr: false`
+- **Minimal TypeScript conversion:** Components use `any` for data objects to keep the port simple; type safety is enforced at the API boundary via Zod schemas
+
+---
+
 ## [2026-02-15] — Phase 2: Authentication & Multi-Tenant Access Control
 
 ### Added

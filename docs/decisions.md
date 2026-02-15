@@ -307,3 +307,28 @@ Token-based invitations stored in the `invitations` table. Admins create invitat
 - **Auto-join via trigger:** Eliminates a separate "accept invitation" step after signup. The user signs up → trigger finds their invitation → they're in the org instantly.
 - **Expiry and revocation:** 7-day default expiry prevents stale invitations. Admins can revoke at any time.
 - **Race condition safety:** `FOR UPDATE` row lock on the invitation prevents duplicate acceptance if two signup requests happen simultaneously.
+
+---
+
+## ADR-018: Port Dashboard-v1 into Next.js App
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+The legacy dashboard (`dashboard-v1/`) was a standalone Vite + React app that connected directly to Supabase via service_role key. With Phase 2 authentication in place, the main Next.js app now handles login, session management, and API routing. The dashboard needs to live inside the authenticated Next.js app, not as a separate deployment.
+
+### Decision
+Port all dashboard-v1 components (9 visualizations + 2 detail pages) into the Next.js app. Use a shared `useDashboardData()` hook that fetches data via the authenticated REST API. Convert JSX to TSX, replace `react-router-dom` with Next.js routing, and replace direct Supabase queries with API calls.
+
+### Rationale
+- **Single authenticated app:** Users log in once and get the full experience — dashboard, detail pages, team management, API docs — in one app
+- **API-first data access:** Fetching via `/api/v1/` routes maintains the three-layer security model (RLS → API middleware → UI). Direct Supabase queries with service_role key would bypass auth entirely
+- **Shared data hook:** `useDashboardData()` centralizes auth checks (redirect to login/onboarding), session management, and data fetching. All three pages (dashboard, property detail, tenant detail) use the same hook
+- **react-leaflet v4:** The project uses React 18; react-leaflet v5 requires React 19. Pinned to v4 for compatibility
+- **SSR safety:** Leaflet depends on `window`, which doesn't exist during server-side rendering. Used Next.js `dynamic()` import with `ssr: false` for the PropertyMap component
+- **Minimal type conversion:** Used `any` for complex data objects to keep the port focused. Type safety is enforced at the API boundary via Zod schemas
+
+### Notes
+- Dashboard-v1 is preserved in `dashboard-v1/` but is no longer the deployed frontend
+- ADR-010 (Vite dashboard) and ADR-011 (React Router) are now fully superseded for the production app
