@@ -8,19 +8,17 @@ export default function TenantOverview({ data }) {
       const tenantLeases = leases.filter(l => l.tenant_id === t.id && l.status === 'active')
       const totalMonthly = tenantLeases.reduce((sum, l) => sum + (l.monthly_rent || 0), 0)
       const propertyIds = new Set(tenantLeases.map(l => l.property_id))
-      const multiProperty = propertyIds.size > 1
 
       return {
         ...t,
         activeLeaseCount: tenantLeases.length,
         totalMonthly,
         propertyCount: propertyIds.size,
-        multiProperty,
+        multiProperty: propertyIds.size > 1,
       }
     })
   }, [tenants, leases])
 
-  // Group into parent/children
   const grouped = useMemo(() => {
     const parents = rows.filter(t => !t.parent_tenant_id)
     const childMap = {}
@@ -40,60 +38,104 @@ export default function TenantOverview({ data }) {
     return result
   }, [rows])
 
-  const ratingColors = {
-    excellent: 'bg-emerald-900/50 text-emerald-400',
-    good: 'bg-blue-900/50 text-blue-400',
-    fair: 'bg-yellow-900/50 text-yellow-400',
-    poor: 'bg-red-900/50 text-red-400',
-    not_rated: 'bg-gray-800 text-gray-500',
+  const creditColors = {
+    excellent: { bg: 'bg-emerald-400/10', text: 'text-emerald-400', border: 'border-emerald-400/20' },
+    good: { bg: 'bg-brass/10', text: 'text-brass', border: 'border-brass/20' },
+    fair: { bg: 'bg-amber-400/10', text: 'text-amber-400', border: 'border-amber-400/20' },
+    poor: { bg: 'bg-red-400/10', text: 'text-red-400', border: 'border-red-400/20' },
+    not_rated: { bg: 'bg-warm-500/10', text: 'text-warm-400', border: 'border-warm-500/20' },
   }
 
+  const totalRevenue = grouped.reduce((sum, t) => sum + t.totalMonthly, 0)
+
   return (
-    <div className="overflow-x-auto bg-gray-900 border border-gray-800 rounded-lg">
-      <table className="w-full text-sm">
-        <thead className="border-b border-gray-800">
-          <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Industry</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Credit</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active Leases</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Properties</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monthly Rent</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-800/50">
-          {grouped.map(row => (
-            <tr key={row.id} className="hover:bg-gray-800/30">
-              <td className="px-3 py-2">
-                <div className="flex items-center gap-2">
-                  {row.isChild && <span className="text-gray-600 ml-4">└</span>}
-                  <span className={`font-medium ${row.isChild ? 'text-gray-400' : 'text-white'}`}>
-                    {row.company_name}
-                  </span>
-                  {row.isParent && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-900/50 text-purple-400">parent</span>
-                  )}
-                  {row.isChild && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-900/30 text-purple-500">subsidiary</span>
-                  )}
-                  {row.multiProperty && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-900/50 text-amber-400">multi-property</span>
-                  )}
-                </div>
-              </td>
-              <td className="px-3 py-2 text-gray-400">{row.industry?.replace(/_/g, ' ')}</td>
-              <td className="px-3 py-2">
-                <span className={`px-2 py-0.5 rounded text-xs ${ratingColors[row.credit_rating] || ratingColors.not_rated}`}>
-                  {row.credit_rating?.replace(/_/g, ' ')}
-                </span>
-              </td>
-              <td className="px-3 py-2 text-gray-300 tabular-nums">{row.activeLeaseCount}</td>
-              <td className="px-3 py-2 text-gray-300 tabular-nums">{row.propertyCount}</td>
-              <td className="px-3 py-2 text-gray-300 tabular-nums">${row.totalMonthly.toLocaleString()}</td>
+    <div className="card-surface overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-brass-faint">
+              <th className="table-header">Company</th>
+              <th className="table-header">Industry</th>
+              <th className="table-header">Credit</th>
+              <th className="table-header text-right">Leases</th>
+              <th className="table-header text-right">Properties</th>
+              <th className="table-header text-right">Monthly Rent</th>
+              <th className="table-header text-right">Revenue Share</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {grouped.map(row => {
+              const credit = creditColors[row.credit_rating] || creditColors.not_rated
+              const revenueShare = totalRevenue > 0 ? (row.totalMonthly / totalRevenue) * 100 : 0
+
+              return (
+                <tr
+                  key={row.id}
+                  className={`border-b border-obsidian-700/50 last:border-0 hover:bg-brass-faint/50 transition-colors group ${
+                    row.isChild ? 'bg-obsidian-900/40' : ''
+                  }`}
+                >
+                  <td className="table-cell">
+                    <div className="flex items-center gap-2">
+                      {row.isChild && (
+                        <span className="text-brass-dim ml-2 text-xs">└─</span>
+                      )}
+                      <span className={`font-semibold ${row.isChild ? 'text-warm-200' : 'text-warm-white'} group-hover:text-brass transition-colors`}>
+                        {row.company_name}
+                      </span>
+                      {row.isParent && (
+                        <span className="badge bg-brass/10 text-brass-dim border border-brass/15 text-[9px]">
+                          parent
+                        </span>
+                      )}
+                      {row.isChild && (
+                        <span className="badge bg-obsidian-700 text-warm-300 border border-obsidian-600 text-[9px]">
+                          subsidiary
+                        </span>
+                      )}
+                      {row.multiProperty && (
+                        <span className="badge bg-amber-400/8 text-amber-400/80 border border-amber-400/15 text-[9px]">
+                          multi-site
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="table-cell text-warm-200 capitalize">
+                    {row.industry?.replace(/_/g, ' ')}
+                  </td>
+                  <td className="table-cell">
+                    <span className={`badge ${credit.bg} ${credit.text} border ${credit.border}`}>
+                      {row.credit_rating?.replace(/_/g, ' ') || '—'}
+                    </span>
+                  </td>
+                  <td className="table-cell text-right text-warm-100 tabular">
+                    {row.activeLeaseCount}
+                  </td>
+                  <td className="table-cell text-right text-warm-100 tabular">
+                    {row.propertyCount}
+                  </td>
+                  <td className="table-cell text-right text-warm-100 tabular font-medium">
+                    ${row.totalMonthly.toLocaleString()}
+                  </td>
+                  <td className="table-cell text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="w-12 h-1 rounded-full bg-brass/10">
+                        <div
+                          className="h-full rounded-full bg-brass/60 transition-all duration-700"
+                          style={{ width: `${Math.min(revenueShare, 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-warm-300 tabular text-xs">
+                        {revenueShare.toFixed(1)}%
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

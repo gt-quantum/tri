@@ -4,7 +4,8 @@ export default function SummaryCards({ data }) {
   const totalProperties = properties.length
   const totalSpaces = spaces.length
   const occupiedSpaces = spaces.filter(s => s.status === 'occupied').length
-  const occupancyRate = totalSpaces > 0 ? ((occupiedSpaces / totalSpaces) * 100).toFixed(1) : 0
+  const vacantSpaces = totalSpaces - occupiedSpaces
+  const occupancyRate = totalSpaces > 0 ? ((occupiedSpaces / totalSpaces) * 100) : 0
 
   const activeLeases = leases.filter(l => l.status === 'active')
   const totalMonthlyRevenue = activeLeases.reduce((sum, l) => sum + (l.monthly_rent || 0), 0)
@@ -12,33 +13,85 @@ export default function SummaryCards({ data }) {
   const today = new Date()
   const activeLeasesWithRemaining = activeLeases
     .filter(l => l.end_date && new Date(l.end_date) > today)
-    .map(l => {
-      const end = new Date(l.end_date)
-      const diffMs = end - today
-      return diffMs / (1000 * 60 * 60 * 24 * 30.44) // months
-    })
+    .map(l => (new Date(l.end_date) - today) / (1000 * 60 * 60 * 24 * 30.44))
   const avgMonthsRemaining = activeLeasesWithRemaining.length > 0
     ? activeLeasesWithRemaining.reduce((a, b) => a + b, 0) / activeLeasesWithRemaining.length
     : 0
-  const avgYears = (avgMonthsRemaining / 12).toFixed(1)
+
+  const totalValue = properties.reduce((sum, p) => sum + (p.current_value || 0), 0)
 
   const cards = [
-    { label: 'Total Properties', value: totalProperties, sub: `${totalSpaces} spaces` },
-    { label: 'Total Spaces', value: totalSpaces, sub: `${occupiedSpaces} occupied` },
-    { label: 'Occupancy Rate', value: `${occupancyRate}%`, sub: `${totalSpaces - occupiedSpaces} vacant`, color: occupancyRate >= 85 ? 'text-emerald-400' : occupancyRate >= 70 ? 'text-yellow-400' : 'text-red-400' },
-    { label: 'Monthly Revenue', value: `$${totalMonthlyRevenue.toLocaleString()}`, sub: `${activeLeases.length} active leases` },
-    { label: 'Avg Lease Remaining', value: `${avgYears} yrs`, sub: `${avgMonthsRemaining.toFixed(0)} months` },
+    {
+      label: 'Portfolio Value',
+      value: `$${(totalValue / 1_000_000).toFixed(1)}M`,
+      sub: `${totalProperties} properties`,
+      accent: 'brass',
+    },
+    {
+      label: 'Monthly Revenue',
+      value: `$${totalMonthlyRevenue.toLocaleString()}`,
+      sub: `${activeLeases.length} active leases`,
+      accent: 'brass',
+    },
+    {
+      label: 'Occupancy',
+      value: `${occupancyRate.toFixed(1)}%`,
+      sub: `${occupiedSpaces} of ${totalSpaces} spaces`,
+      accent: occupancyRate >= 85 ? 'emerald' : occupancyRate >= 70 ? 'amber' : 'red',
+      bar: occupancyRate,
+    },
+    {
+      label: 'Vacant Spaces',
+      value: vacantSpaces,
+      sub: `${spaces.filter(s => s.status === 'vacant').reduce((sum, s) => sum + (s.sqft || 0), 0).toLocaleString()} sqft available`,
+      accent: vacantSpaces > 10 ? 'red' : 'warm',
+    },
+    {
+      label: 'Avg Lease Term',
+      value: `${(avgMonthsRemaining / 12).toFixed(1)}y`,
+      sub: `${Math.round(avgMonthsRemaining)} months remaining`,
+      accent: 'warm',
+    },
   ]
 
+  const accentColors = {
+    brass: { value: 'text-brass', bar: 'bg-brass', barBg: 'bg-brass/10' },
+    emerald: { value: 'text-emerald-400', bar: 'bg-emerald-400', barBg: 'bg-emerald-400/10' },
+    amber: { value: 'text-amber-400', bar: 'bg-amber-400', barBg: 'bg-amber-400/10' },
+    red: { value: 'text-red-400', bar: 'bg-red-400', barBg: 'bg-red-400/10' },
+    warm: { value: 'text-warm-white', bar: 'bg-warm-200', barBg: 'bg-warm-200/10' },
+  }
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-      {cards.map((card) => (
-        <div key={card.label} className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-          <div className="text-gray-500 text-xs uppercase tracking-wide mb-1">{card.label}</div>
-          <div className={`text-2xl font-bold ${card.color || 'text-white'}`}>{card.value}</div>
-          <div className="text-gray-600 text-xs mt-1">{card.sub}</div>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      {cards.map((card, i) => {
+        const colors = accentColors[card.accent] || accentColors.warm
+        return (
+          <div
+            key={card.label}
+            className="card-surface-hover p-5 group"
+            style={{ animationDelay: `${i * 0.06}s` }}
+          >
+            <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">
+              {card.label}
+            </div>
+            <div className={`text-2xl font-body font-bold tabular ${colors.value}`}>
+              {card.value}
+            </div>
+            {card.bar !== undefined && (
+              <div className={`mt-3 h-1 rounded-full ${colors.barBg}`}>
+                <div
+                  className={`h-full rounded-full ${colors.bar} transition-all duration-1000 ease-out`}
+                  style={{ width: `${card.bar}%` }}
+                />
+              </div>
+            )}
+            <div className="text-warm-400 text-[11px] font-body mt-2">
+              {card.sub}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

@@ -3,8 +3,8 @@ import { useMemo } from 'react'
 export default function VacancyView({ data }) {
   const { spaces, properties, leases, tenants } = data
 
-  const vacantSpaces = useMemo(() => {
-    return spaces
+  const vacantByProperty = useMemo(() => {
+    const vacantSpaces = spaces
       .filter(s => s.status === 'vacant')
       .map(s => {
         const property = properties.find(p => p.id === s.property_id)
@@ -17,6 +17,7 @@ export default function VacancyView({ data }) {
 
         return {
           id: s.id,
+          propertyId: property?.id,
           propertyName: property?.name || '',
           propertyCity: property?.city || '',
           spaceName: s.name,
@@ -32,53 +33,130 @@ export default function VacancyView({ data }) {
             : null,
         }
       })
-      .sort((a, b) => (b.sqft || 0) - (a.sqft || 0))
+
+    // Group by property
+    const grouped = {}
+    vacantSpaces.forEach(s => {
+      if (!grouped[s.propertyId]) {
+        grouped[s.propertyId] = {
+          name: s.propertyName,
+          city: s.propertyCity,
+          spaces: [],
+          totalSqft: 0,
+        }
+      }
+      grouped[s.propertyId].spaces.push(s)
+      grouped[s.propertyId].totalSqft += s.sqft || 0
+    })
+
+    return Object.entries(grouped)
+      .map(([id, group]) => ({ id, ...group }))
+      .sort((a, b) => b.totalSqft - a.totalSqft)
   }, [spaces, properties, leases, tenants])
 
+  const totalVacant = vacantByProperty.reduce((sum, p) => sum + p.spaces.length, 0)
+  const totalSqft = vacantByProperty.reduce((sum, p) => sum + p.totalSqft, 0)
+  const underNeg = vacantByProperty.reduce(
+    (sum, p) => sum + p.spaces.filter(s => s.negotiation).length,
+    0
+  )
+
   return (
-    <div className="overflow-x-auto bg-gray-900 border border-gray-800 rounded-lg">
-      <table className="w-full text-sm">
-        <thead className="border-b border-gray-800">
-          <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Space</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Floor</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sqft</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-800/50">
-          {vacantSpaces.map(row => (
-            <tr key={row.id} className="hover:bg-gray-800/30">
-              <td className="px-3 py-2">
-                <div className="text-white font-medium">{row.propertyName}</div>
-                <div className="text-gray-600 text-xs">{row.propertyCity}</div>
-              </td>
-              <td className="px-3 py-2 text-gray-300">{row.spaceName}</td>
-              <td className="px-3 py-2 text-gray-400">{row.floor}</td>
-              <td className="px-3 py-2 text-gray-300 tabular-nums">{row.sqft?.toLocaleString()}</td>
-              <td className="px-3 py-2">
-                <span className="px-2 py-0.5 rounded text-xs bg-gray-800 text-gray-400">{row.spaceType}</span>
-              </td>
-              <td className="px-3 py-2">
-                {row.negotiation ? (
-                  <div>
-                    <span className="px-2 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">Under Negotiation</span>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {row.negotiation.tenant} · ${row.negotiation.monthlyRent?.toLocaleString()}/mo · starts {row.negotiation.startDate}
+    <div className="space-y-4">
+      {/* Summary strip */}
+      <div className="flex items-center gap-6 px-1">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-red-400/60" />
+          <span className="text-warm-300 text-xs font-body">
+            <span className="text-warm-white font-medium tabular">{totalVacant - underNeg}</span> available
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-blue-400/60" />
+          <span className="text-warm-300 text-xs font-body">
+            <span className="text-warm-white font-medium tabular">{underNeg}</span> in negotiation
+          </span>
+        </div>
+        <div className="text-warm-500 text-xs font-body">
+          <span className="text-warm-300 tabular">{totalSqft.toLocaleString()}</span> sqft total
+        </div>
+      </div>
+
+      {/* Grouped cards */}
+      <div className="grid gap-3">
+        {vacantByProperty.map(group => (
+          <div key={group.id} className="card-surface overflow-hidden">
+            {/* Property header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-brass-faint">
+              <div>
+                <span className="font-body font-semibold text-warm-white text-sm">{group.name}</span>
+                <span className="text-warm-400 text-xs ml-2">{group.city}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-warm-300 text-[11px] font-body tabular">
+                  {group.spaces.length} vacant
+                </span>
+                <span className="text-warm-500 text-[11px]">·</span>
+                <span className="text-warm-300 text-[11px] font-body tabular">
+                  {group.totalSqft.toLocaleString()} sqft
+                </span>
+              </div>
+            </div>
+
+            {/* Spaces */}
+            <div className="divide-y divide-obsidian-700/40">
+              {group.spaces
+                .sort((a, b) => (b.sqft || 0) - (a.sqft || 0))
+                .map(space => (
+                  <div
+                    key={space.id}
+                    className="flex items-center gap-4 px-5 py-2.5 hover:bg-brass-faint/30 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-warm-white text-sm font-body font-medium">
+                          {space.spaceName}
+                        </span>
+                        <span className="badge bg-obsidian-700 text-warm-300 border border-obsidian-600 text-[9px]">
+                          {space.spaceType}
+                        </span>
+                      </div>
+                      {space.negotiation && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="badge bg-blue-400/10 text-blue-400 border border-blue-400/20 text-[9px]">
+                            negotiating
+                          </span>
+                          <span className="text-warm-300 text-[11px] font-body">
+                            {space.negotiation.tenant}
+                          </span>
+                          <span className="text-warm-500 text-[11px]">·</span>
+                          <span className="text-warm-300 text-[11px] font-body tabular">
+                            ${space.negotiation.monthlyRent?.toLocaleString()}/mo
+                          </span>
+                        </div>
+                      )}
                     </div>
+
+                    <div className="text-right shrink-0">
+                      <div className="text-warm-100 text-sm font-body tabular">
+                        {space.sqft?.toLocaleString()} sqft
+                      </div>
+                      <div className="text-warm-500 text-[11px] font-body">
+                        Floor {space.floor}
+                      </div>
+                    </div>
+
+                    {!space.negotiation && (
+                      <div className="w-2 h-2 rounded-full bg-red-400/40 shrink-0" />
+                    )}
+                    {space.negotiation && (
+                      <div className="w-2 h-2 rounded-full bg-blue-400/50 animate-glow-pulse shrink-0" />
+                    )}
                   </div>
-                ) : (
-                  <span className="px-2 py-0.5 rounded text-xs bg-red-900/30 text-red-400">Vacant</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="px-3 py-2 text-xs text-gray-600 border-t border-gray-800">
-        {vacantSpaces.length} vacant spaces · {vacantSpaces.reduce((sum, s) => sum + (s.sqft || 0), 0).toLocaleString()} total sqft
+                ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )

@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 export default function LeaseTimeline({ data }) {
   const { leases, tenants, spaces, properties } = data
+  const [filter, setFilter] = useState('all')
 
   const today = new Date()
   const sixMonthsOut = new Date(today)
@@ -16,19 +17,23 @@ export default function LeaseTimeline({ data }) {
         const property = properties.find(p => p.id === l.property_id)
         const endDate = new Date(l.end_date)
 
-        let color, label
+        let category, color, barColor
         if (l.status === 'expired') {
-          color = 'bg-gray-700 text-gray-400'
-          label = 'Expired'
+          category = 'expired'
+          color = 'text-warm-400'
+          barColor = 'bg-warm-500/40'
         } else if (l.status === 'under_negotiation') {
-          color = 'bg-blue-900/60 text-blue-400'
-          label = 'Negotiating'
+          category = 'negotiating'
+          color = 'text-blue-400'
+          barColor = 'bg-blue-400/50'
         } else if (endDate <= sixMonthsOut) {
-          color = 'bg-yellow-900/60 text-yellow-400'
-          label = 'Expiring Soon'
+          category = 'expiring'
+          color = 'text-amber-400'
+          barColor = 'bg-amber-400/50'
         } else {
-          color = 'bg-emerald-900/60 text-emerald-400'
-          label = 'Active'
+          category = 'active'
+          color = 'text-emerald-400'
+          barColor = 'bg-emerald-400/30'
         }
 
         return {
@@ -40,47 +45,109 @@ export default function LeaseTimeline({ data }) {
           endDateStr: l.end_date,
           status: l.status,
           monthlyRent: l.monthly_rent,
+          category,
           color,
-          label,
+          barColor,
         }
       })
       .sort((a, b) => a.endDate - b.endDate)
   }, [leases, tenants, spaces, properties])
 
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 max-h-[500px] overflow-y-auto">
-      <div className="space-y-1.5">
-        {items.map(item => {
-          const monthsAway = (item.endDate - today) / (1000 * 60 * 60 * 24 * 30.44)
-          // Bar width: expired = thin, negotiation = medium, active = proportional to time remaining
-          const maxMonths = 72 // 6 years
-          const widthPct = item.status === 'expired'
-            ? 5
-            : Math.max(8, Math.min(95, (Math.max(0, monthsAway) / maxMonths) * 95))
+  const filtered = filter === 'all' ? items : items.filter(i => i.category === filter)
 
-          return (
-            <div key={item.id} className="flex items-center gap-3 text-xs group">
-              <div className="w-40 truncate text-gray-400 shrink-0" title={item.tenant}>
-                {item.tenant}
-              </div>
-              <div className="flex-1 relative">
-                <div
-                  className={`h-6 rounded flex items-center px-2 ${item.color} transition-all`}
-                  style={{ width: `${widthPct}%` }}
-                >
-                  <span className="truncate text-[10px] font-medium">{item.label}</span>
+  const counts = useMemo(() => ({
+    all: items.length,
+    expiring: items.filter(i => i.category === 'expiring').length,
+    negotiating: items.filter(i => i.category === 'negotiating').length,
+    expired: items.filter(i => i.category === 'expired').length,
+    active: items.filter(i => i.category === 'active').length,
+  }), [items])
+
+  const filterButtons = [
+    { key: 'all', label: 'All' },
+    { key: 'expiring', label: 'Expiring Soon', accent: 'text-amber-400' },
+    { key: 'negotiating', label: 'Negotiating', accent: 'text-blue-400' },
+    { key: 'active', label: 'Active', accent: 'text-emerald-400' },
+    { key: 'expired', label: 'Expired', accent: 'text-warm-400' },
+  ]
+
+  return (
+    <div className="card-surface overflow-hidden">
+      {/* Filter bar */}
+      <div className="flex items-center gap-1 px-5 py-3 border-b border-brass-faint overflow-x-auto">
+        {filterButtons.map(btn => (
+          <button
+            key={btn.key}
+            onClick={() => setFilter(btn.key)}
+            className={`px-3 py-1 rounded text-[11px] font-body font-medium uppercase tracking-wider transition-all whitespace-nowrap ${
+              filter === btn.key
+                ? 'bg-brass/15 text-brass border border-brass/20'
+                : 'text-warm-400 hover:text-warm-200 border border-transparent'
+            }`}
+          >
+            {btn.label}
+            <span className={`ml-1.5 tabular ${filter === btn.key ? 'text-brass/70' : 'text-warm-500'}`}>
+              {counts[btn.key]}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Timeline rows */}
+      <div className="max-h-[460px] overflow-y-auto">
+        <div className="divide-y divide-obsidian-700/40">
+          {filtered.map(item => {
+            const monthsAway = (item.endDate - today) / (1000 * 60 * 60 * 24 * 30.44)
+            const maxMonths = 72
+            const widthPct = item.status === 'expired'
+              ? 4
+              : Math.max(6, Math.min(92, (Math.max(0, monthsAway) / maxMonths) * 92))
+
+            return (
+              <div
+                key={item.id}
+                className="flex items-center gap-4 px-5 py-2.5 hover:bg-brass-faint/30 transition-colors group"
+              >
+                {/* Tenant name */}
+                <div className="w-36 shrink-0">
+                  <div className="text-warm-white text-sm font-body font-medium truncate group-hover:text-brass transition-colors" title={item.tenant}>
+                    {item.tenant}
+                  </div>
+                </div>
+
+                {/* Bar */}
+                <div className="flex-1 relative h-5">
+                  <div
+                    className={`absolute inset-y-0 left-0 rounded ${item.barColor} flex items-center px-2 transition-all duration-500`}
+                    style={{ width: `${widthPct}%` }}
+                  >
+                    <span className={`text-[10px] font-body font-semibold uppercase tracking-wider ${item.color} truncate`}>
+                      {item.category === 'expiring' ? 'Exp. Soon' : item.category === 'negotiating' ? 'Negotiating' : item.category === 'expired' ? 'Expired' : 'Active'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Property / Space */}
+                <div className="w-44 shrink-0 text-right hidden md:block">
+                  <span className="text-warm-200 text-xs font-body">{item.property}</span>
+                  {item.space && (
+                    <span className="text-warm-500 text-xs"> · {item.space}</span>
+                  )}
+                </div>
+
+                {/* Rent */}
+                <div className="w-20 shrink-0 text-right text-warm-200 text-xs font-body tabular hidden sm:block">
+                  ${item.monthlyRent?.toLocaleString()}
+                </div>
+
+                {/* Date */}
+                <div className="w-24 shrink-0 text-right">
+                  <span className="text-warm-300 text-xs font-body tabular">{item.endDateStr}</span>
                 </div>
               </div>
-              <div className="w-40 text-right text-gray-500 shrink-0 hidden sm:block">
-                <span className="text-gray-400">{item.property}</span>
-                {item.space ? <span className="text-gray-600"> · {item.space}</span> : null}
-              </div>
-              <div className="w-20 text-right text-gray-500 tabular-nums shrink-0">
-                {item.endDateStr}
-              </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
     </div>
   )
