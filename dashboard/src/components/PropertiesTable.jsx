@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 
 export default function PropertiesTable({ data }) {
   const { properties, spaces, leases } = data
@@ -105,9 +106,12 @@ export default function PropertiesTable({ data }) {
                   className="border-b border-obsidian-700/50 last:border-0 hover:bg-brass-faint/50 transition-colors group"
                 >
                   <td className="table-cell">
-                    <span className="font-semibold text-warm-white group-hover:text-brass transition-colors">
+                    <Link
+                      to={`/property/${row.id}`}
+                      className="font-semibold text-warm-white group-hover:text-brass transition-colors"
+                    >
                       {row.name}
-                    </span>
+                    </Link>
                   </td>
                   <td className="table-cell text-warm-200">
                     <span>{row.city}</span>

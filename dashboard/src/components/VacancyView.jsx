@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 
 export default function VacancyView({ data }) {
   const { spaces, properties, leases, tenants } = data
@@ -26,6 +27,7 @@ export default function VacancyView({ data }) {
           spaceType: s.space_type,
           negotiation: negotiationLease
             ? {
+                tenantId: tenant?.id,
                 tenant: tenant?.company_name || 'Unknown',
                 monthlyRent: negotiationLease.monthly_rent,
                 startDate: negotiationLease.start_date,
@@ -89,7 +91,12 @@ export default function VacancyView({ data }) {
             {/* Property header */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-brass-faint">
               <div>
-                <span className="font-body font-semibold text-warm-white text-sm">{group.name}</span>
+                <Link
+                  to={`/property/${group.id}`}
+                  className="font-body font-semibold text-warm-white text-sm hover:text-brass transition-colors"
+                >
+                  {group.name}
+                </Link>
                 <span className="text-warm-400 text-xs ml-2">{group.city}</span>
               </div>
               <div className="flex items-center gap-3">
@@ -126,9 +133,18 @@ export default function VacancyView({ data }) {
                           <span className="badge bg-blue-400/10 text-blue-400 border border-blue-400/20 text-[9px]">
                             negotiating
                           </span>
-                          <span className="text-warm-300 text-[11px] font-body">
-                            {space.negotiation.tenant}
-                          </span>
+                          {space.negotiation.tenantId ? (
+                            <Link
+                              to={`/tenant/${space.negotiation.tenantId}`}
+                              className="text-warm-300 text-[11px] font-body hover:text-brass transition-colors"
+                            >
+                              {space.negotiation.tenant}
+                            </Link>
+                          ) : (
+                            <span className="text-warm-300 text-[11px] font-body">
+                              {space.negotiation.tenant}
+                            </span>
+                          )}
                           <span className="text-warm-500 text-[11px]">·</span>
                           <span className="text-warm-300 text-[11px] font-body tabular">
                             ${space.negotiation.monthlyRent?.toLocaleString()}/mo

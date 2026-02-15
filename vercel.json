@@ -2,5 +2,8 @@
   "buildCommand": "cd dashboard && npm run build",
   "installCommand": "cd dashboard && npm install",
   "outputDirectory": "dashboard/dist",
-  "framework": "vite"
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

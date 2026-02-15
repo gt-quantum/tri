@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 
 export default function TenantOverview({ data }) {
   const { tenants, leases, properties } = data
@@ -80,9 +81,12 @@ export default function TenantOverview({ data }) {
                       {row.isChild && (
                         <span className="text-brass-dim ml-2 text-xs">└─</span>
                       )}
-                      <span className={`font-semibold ${row.isChild ? 'text-warm-200' : 'text-warm-white'} group-hover:text-brass transition-colors`}>
+                      <Link
+                        to={`/tenant/${row.id}`}
+                        className={`font-semibold ${row.isChild ? 'text-warm-200' : 'text-warm-white'} group-hover:text-brass transition-colors`}
+                      >
                         {row.company_name}
-                      </span>
+                      </Link>
                       {row.isParent && (
                         <span className="badge bg-brass/10 text-brass-dim border border-brass/15 text-[9px]">
                           parent

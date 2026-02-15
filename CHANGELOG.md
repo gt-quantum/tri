@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-14] — Property & Tenant Detail Pages
+
+### Added
+- React Router (`react-router-dom`) for client-side routing
+- **Property Detail page** (`/property/:id`):
+  - Property header with name, full address, type badge, sqft, year built, acquisition date/price, current value with appreciation %
+  - Summary cards: total spaces, occupied/vacant count, occupancy rate with progress bar, monthly and annual rent
+  - Spaces table with floor, sqft, type, status (color-coded occupied/vacant), current tenant, monthly rent, lease expiration
+  - Vacant spaces with "Negotiating" badge and prospective tenant when applicable
+  - Active leases table with tenant, space, lease type, dates, rent, escalation %, time remaining
+  - Lease history section (expired leases, grayed out)
+  - Leases expiring within 6 months highlighted in amber/warning
+- **Tenant Detail page** (`/tenant/:id`):
+  - Tenant header with company name, industry badge, credit rating badge (color-coded), website link, contact info
+  - Parent/subsidiary relationship display with navigation links
+  - Portfolio footprint summary cards: active leases, properties, total sqft, monthly and annual rent
+  - Active leases table with property (clickable), space, lease type, dates, rent, escalation %, time remaining
+  - Lease history section (expired leases, grayed out)
+- All property names across dashboard now link to property detail page
+- All tenant names across dashboard now link to tenant detail page
+- Cross-navigation between property and tenant detail pages
+- Back-to-dashboard navigation on detail pages
+- SPA rewrite rule in `vercel.json` for production routing
+
+### Changed
+- Extracted dashboard content from `App.jsx` into `pages/Dashboard.jsx`
+- `App.jsx` now handles routing (data fetching + `<Routes>`)
+- `main.jsx` wrapped with `<BrowserRouter>`
+- `PropertiesTable` — property names are now `<Link>` to `/property/:id`
+- `TenantOverview` — company names are now `<Link>` to `/tenant/:id`
+- `LeaseTimeline` — tenant and property names are now clickable links
+- `VacancyView` — property headers and negotiating tenant names are now clickable links
+
+---
+
 ## [2026-02-14] — Seed Data & Dashboard
 
 ### Added

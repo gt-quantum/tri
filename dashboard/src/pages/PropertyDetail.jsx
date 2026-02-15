@@ -1,0 +1,487 @@
+import { useMemo } from 'react'
+import { useParams, Link } from 'react-router-dom'
+
+export default function PropertyDetail({ data }) {
+  const { id } = useParams()
+  const { properties, spaces, tenants, leases } = data
+
+  const property = properties.find(p => p.id === id)
+
+  const propertySpaces = useMemo(() => {
+    if (!property) return []
+    return spaces.filter(s => s.property_id === property.id)
+  }, [property, spaces])
+
+  const propertyLeases = useMemo(() => {
+    if (!property) return []
+    return leases.filter(l => l.property_id === property.id)
+  }, [property, leases])
+
+  const activeLeases = useMemo(() =>
+    propertyLeases.filter(l => l.status === 'active'),
+    [propertyLeases]
+  )
+
+  const expiredLeases = useMemo(() =>
+    propertyLeases.filter(l => l.status === 'expired'),
+    [propertyLeases]
+  )
+
+  const today = new Date()
+  const sixMonthsOut = new Date(today)
+  sixMonthsOut.setMonth(sixMonthsOut.getMonth() + 6)
+
+  // Summary calculations
+  const occupiedCount = propertySpaces.filter(s => s.status === 'occupied').length
+  const vacantCount = propertySpaces.filter(s => s.status === 'vacant').length
+  const occupancyRate = propertySpaces.length > 0
+    ? (occupiedCount / propertySpaces.length) * 100 : 0
+  const totalMonthlyRent = activeLeases.reduce((sum, l) => sum + (l.monthly_rent || 0), 0)
+  const totalAnnualRent = activeLeases.reduce((sum, l) => sum + (l.annual_rent || 0), 0)
+
+  // Appreciation
+  const appreciation = property && property.acquisition_price && property.current_value
+    ? ((property.current_value - property.acquisition_price) / property.acquisition_price) * 100
+    : null
+
+  // Space rows with lease data
+  const spaceRows = useMemo(() => {
+    return propertySpaces.map(s => {
+      const activeLease = leases.find(
+        l => l.space_id === s.id && l.status === 'active'
+      )
+      const negotiationLease = leases.find(
+        l => l.space_id === s.id && l.status === 'under_negotiation'
+      )
+      const tenant = activeLease
+        ? tenants.find(t => t.id === activeLease.tenant_id)
+        : null
+      const negotiationTenant = negotiationLease
+        ? tenants.find(t => t.id === negotiationLease.tenant_id)
+        : null
+
+      return {
+        ...s,
+        tenant,
+        activeLease,
+        negotiationTenant,
+        negotiationLease,
+      }
+    }).sort((a, b) => {
+      // Occupied first, then vacant
+      if (a.status === 'occupied' && b.status !== 'occupied') return -1
+      if (a.status !== 'occupied' && b.status === 'occupied') return 1
+      return (a.name || '').localeCompare(b.name || '')
+    })
+  }, [propertySpaces, leases, tenants])
+
+  function formatCurrency(val) {
+    if (!val) return '$0'
+    return '$' + Number(val).toLocaleString()
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '—'
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+    })
+  }
+
+  function timeRemaining(endDateStr) {
+    if (!endDateStr) return '—'
+    const end = new Date(endDateStr)
+    const diffMs = end - today
+    if (diffMs <= 0) return 'Expired'
+    const months = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30.44))
+    if (months >= 12) {
+      const years = Math.floor(months / 12)
+      const rem = months % 12
+      return rem > 0 ? `${years}y ${rem}mo` : `${years}y`
+    }
+    return `${months}mo`
+  }
+
+  function isExpiringSoon(endDateStr) {
+    if (!endDateStr) return false
+    return new Date(endDateStr) <= sixMonthsOut && new Date(endDateStr) > today
+  }
+
+  function occupancyColor(pct) {
+    if (pct >= 90) return 'text-emerald-400'
+    if (pct >= 70) return 'text-amber-400'
+    return 'text-red-400'
+  }
+
+  if (!property) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="card-surface p-8 text-center max-w-md">
+          <h2 className="font-display text-lg text-warm-white mb-2">Property Not Found</h2>
+          <p className="text-warm-300 text-sm mb-4">The requested property could not be found.</p>
+          <Link to="/" className="text-brass hover:text-brass-light text-sm font-body transition-colors">
+            &larr; Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen">
+      <div className="h-px bg-gradient-to-r from-transparent via-brass/40 to-transparent" />
+
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-8">
+        {/* Back button */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-warm-300 hover:text-brass text-sm font-body transition-colors mb-6"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          Back to Dashboard
+        </Link>
+
+        {/* Property Header */}
+        <header className="mb-8 animate-fade-up">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="font-display text-3xl text-warm-white tracking-wide">{property.name}</h1>
+                <span className="badge bg-obsidian-700 text-warm-200 border border-obsidian-600">
+                  {property.property_type}
+                </span>
+              </div>
+              <p className="font-body text-warm-300 text-sm">
+                {property.address}, {property.city}, {property.state} {property.zip}
+              </p>
+            </div>
+          </div>
+
+          {/* Property meta */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-4 text-sm font-body">
+            {property.total_sqft && (
+              <div>
+                <span className="text-warm-400 text-xs uppercase tracking-wider">Sqft</span>
+                <span className="text-warm-white ml-2 tabular">{Number(property.total_sqft).toLocaleString()}</span>
+              </div>
+            )}
+            {property.year_built && (
+              <div>
+                <span className="text-warm-400 text-xs uppercase tracking-wider">Built</span>
+                <span className="text-warm-white ml-2 tabular">{property.year_built}</span>
+              </div>
+            )}
+            {property.acquisition_date && (
+              <div>
+                <span className="text-warm-400 text-xs uppercase tracking-wider">Acquired</span>
+                <span className="text-warm-white ml-2">{formatDate(property.acquisition_date)}</span>
+              </div>
+            )}
+            {property.acquisition_price && (
+              <div>
+                <span className="text-warm-400 text-xs uppercase tracking-wider">Acq. Price</span>
+                <span className="text-warm-white ml-2 tabular">{formatCurrency(property.acquisition_price)}</span>
+              </div>
+            )}
+            {property.current_value && (
+              <div>
+                <span className="text-warm-400 text-xs uppercase tracking-wider">Current Value</span>
+                <span className="text-brass ml-2 font-medium tabular">{formatCurrency(property.current_value)}</span>
+                {appreciation !== null && (
+                  <span className={`ml-2 text-xs tabular ${appreciation >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {appreciation >= 0 ? '+' : ''}{appreciation.toFixed(1)}%
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-10 animate-fade-up stagger-1">
+          <div className="card-surface-hover p-5">
+            <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Total Spaces</div>
+            <div className="text-2xl font-body font-bold text-warm-white tabular">{propertySpaces.length}</div>
+          </div>
+          <div className="card-surface-hover p-5">
+            <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Occupied / Vacant</div>
+            <div className="text-2xl font-body font-bold tabular">
+              <span className="text-emerald-400">{occupiedCount}</span>
+              <span className="text-warm-500 mx-1">/</span>
+              <span className="text-red-400">{vacantCount}</span>
+            </div>
+          </div>
+          <div className="card-surface-hover p-5">
+            <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Occupancy Rate</div>
+            <div className={`text-2xl font-body font-bold tabular ${occupancyColor(occupancyRate)}`}>
+              {occupancyRate.toFixed(1)}%
+            </div>
+            <div className="mt-2 h-1 rounded-full bg-warm-500/20">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${occupancyRate >= 90 ? 'bg-emerald-400' : occupancyRate >= 70 ? 'bg-amber-400' : 'bg-red-400'}`}
+                style={{ width: `${occupancyRate}%` }}
+              />
+            </div>
+          </div>
+          <div className="card-surface-hover p-5">
+            <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Monthly Rent</div>
+            <div className="text-2xl font-body font-bold text-brass tabular">{formatCurrency(totalMonthlyRent)}</div>
+          </div>
+          <div className="card-surface-hover p-5">
+            <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Annual Rent</div>
+            <div className="text-2xl font-body font-bold text-brass tabular">{formatCurrency(totalAnnualRent)}</div>
+          </div>
+        </div>
+
+        {/* Spaces Table */}
+        <section className="mb-10 animate-fade-up stagger-2">
+          <div className="flex items-center gap-4 mb-5">
+            <h2 className="section-heading">Spaces</h2>
+            <div className="flex-1 brass-line" />
+            <span className="text-warm-400 text-xs font-body tabular">{propertySpaces.length} total</span>
+          </div>
+          <div className="card-surface overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-brass-faint">
+                    <th className="table-header">Space</th>
+                    <th className="table-header">Floor</th>
+                    <th className="table-header text-right">Sqft</th>
+                    <th className="table-header">Type</th>
+                    <th className="table-header">Status</th>
+                    <th className="table-header">Tenant</th>
+                    <th className="table-header text-right">Monthly Rent</th>
+                    <th className="table-header text-right">Lease Expires</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {spaceRows.map(row => {
+                    const isVacant = row.status === 'vacant'
+                    const hasNegotiation = isVacant && row.negotiationTenant
+                    return (
+                      <tr
+                        key={row.id}
+                        className={`border-b border-obsidian-700/50 last:border-0 hover:bg-brass-faint/50 transition-colors group ${isVacant ? 'bg-obsidian-900/40' : ''}`}
+                      >
+                        <td className="table-cell">
+                          <span className={`font-semibold ${isVacant ? 'text-warm-300' : 'text-warm-white'}`}>
+                            {row.name}
+                          </span>
+                        </td>
+                        <td className="table-cell text-warm-200">{row.floor || '—'}</td>
+                        <td className="table-cell text-right text-warm-100 tabular">
+                          {row.sqft ? Number(row.sqft).toLocaleString() : '—'}
+                        </td>
+                        <td className="table-cell">
+                          <span className="badge bg-obsidian-700 text-warm-200 border border-obsidian-600">
+                            {row.space_type}
+                          </span>
+                        </td>
+                        <td className="table-cell">
+                          {isVacant ? (
+                            <div className="flex items-center gap-2">
+                              <span className="badge bg-red-400/10 text-red-400 border border-red-400/20">vacant</span>
+                              {hasNegotiation && (
+                                <span className="badge bg-blue-400/10 text-blue-400 border border-blue-400/20">negotiating</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="badge bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">occupied</span>
+                          )}
+                        </td>
+                        <td className="table-cell">
+                          {row.tenant ? (
+                            <Link
+                              to={`/tenant/${row.tenant.id}`}
+                              className="text-warm-white hover:text-brass transition-colors"
+                            >
+                              {row.tenant.company_name}
+                            </Link>
+                          ) : hasNegotiation ? (
+                            <Link
+                              to={`/tenant/${row.negotiationTenant.id}`}
+                              className="text-blue-400/80 hover:text-blue-400 transition-colors italic"
+                            >
+                              {row.negotiationTenant.company_name}
+                            </Link>
+                          ) : (
+                            <span className="text-warm-500">—</span>
+                          )}
+                        </td>
+                        <td className="table-cell text-right tabular">
+                          {row.activeLease ? (
+                            <span className="text-warm-100">{formatCurrency(row.activeLease.monthly_rent)}</span>
+                          ) : row.negotiationLease ? (
+                            <span className="text-blue-400/60 italic">{formatCurrency(row.negotiationLease.monthly_rent)}</span>
+                          ) : (
+                            <span className="text-warm-500">—</span>
+                          )}
+                        </td>
+                        <td className="table-cell text-right">
+                          {row.activeLease?.end_date ? (
+                            <span className={`tabular ${isExpiringSoon(row.activeLease.end_date) ? 'text-amber-400' : 'text-warm-200'}`}>
+                              {formatDate(row.activeLease.end_date)}
+                            </span>
+                          ) : (
+                            <span className="text-warm-500">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* Active Leases */}
+        <section className="mb-10 animate-fade-up stagger-3">
+          <div className="flex items-center gap-4 mb-5">
+            <h2 className="section-heading">Active Leases</h2>
+            <div className="flex-1 brass-line" />
+            <span className="text-warm-400 text-xs font-body tabular">{activeLeases.length} active</span>
+          </div>
+          <div className="card-surface overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-brass-faint">
+                    <th className="table-header">Tenant</th>
+                    <th className="table-header">Space</th>
+                    <th className="table-header">Type</th>
+                    <th className="table-header">Start</th>
+                    <th className="table-header">End</th>
+                    <th className="table-header text-right">Monthly</th>
+                    <th className="table-header text-right">Annual</th>
+                    <th className="table-header text-right">Escalation</th>
+                    <th className="table-header text-right">Remaining</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeLeases.map(lease => {
+                    const tenant = tenants.find(t => t.id === lease.tenant_id)
+                    const space = spaces.find(s => s.id === lease.space_id)
+                    const expiring = isExpiringSoon(lease.end_date)
+                    return (
+                      <tr
+                        key={lease.id}
+                        className={`border-b border-obsidian-700/50 last:border-0 hover:bg-brass-faint/50 transition-colors ${expiring ? 'bg-amber-400/[0.03]' : ''}`}
+                      >
+                        <td className="table-cell">
+                          {tenant ? (
+                            <Link
+                              to={`/tenant/${tenant.id}`}
+                              className="font-semibold text-warm-white hover:text-brass transition-colors"
+                            >
+                              {tenant.company_name}
+                            </Link>
+                          ) : (
+                            <span className="text-warm-400">Unknown</span>
+                          )}
+                        </td>
+                        <td className="table-cell text-warm-200">{space?.name || '—'}</td>
+                        <td className="table-cell">
+                          <span className="badge bg-obsidian-700 text-warm-200 border border-obsidian-600">
+                            {lease.lease_type}
+                          </span>
+                        </td>
+                        <td className="table-cell text-warm-200 tabular">{formatDate(lease.start_date)}</td>
+                        <td className="table-cell tabular">
+                          <span className={expiring ? 'text-amber-400 font-medium' : 'text-warm-200'}>
+                            {formatDate(lease.end_date)}
+                          </span>
+                        </td>
+                        <td className="table-cell text-right text-warm-100 tabular">{formatCurrency(lease.monthly_rent)}</td>
+                        <td className="table-cell text-right text-warm-100 tabular">{formatCurrency(lease.annual_rent)}</td>
+                        <td className="table-cell text-right text-warm-200 tabular">
+                          {lease.rent_escalation ? `${lease.rent_escalation}%` : '—'}
+                        </td>
+                        <td className="table-cell text-right tabular">
+                          <span className={expiring ? 'text-amber-400 font-medium' : 'text-warm-200'}>
+                            {timeRemaining(lease.end_date)}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {activeLeases.length === 0 && (
+                    <tr><td colSpan={9} className="table-cell text-center text-warm-400">No active leases</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* Lease History */}
+        {expiredLeases.length > 0 && (
+          <section className="mb-16 animate-fade-up stagger-4">
+            <div className="flex items-center gap-4 mb-5">
+              <h2 className="section-heading text-warm-400">Lease History</h2>
+              <div className="flex-1 brass-line opacity-40" />
+              <span className="text-warm-500 text-xs font-body tabular">{expiredLeases.length} expired</span>
+            </div>
+            <div className="card-surface overflow-hidden opacity-60">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-brass-faint">
+                      <th className="table-header">Tenant</th>
+                      <th className="table-header">Space</th>
+                      <th className="table-header">Type</th>
+                      <th className="table-header">Start</th>
+                      <th className="table-header">End</th>
+                      <th className="table-header text-right">Monthly</th>
+                      <th className="table-header text-right">Annual</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expiredLeases.map(lease => {
+                      const tenant = tenants.find(t => t.id === lease.tenant_id)
+                      const space = spaces.find(s => s.id === lease.space_id)
+                      return (
+                        <tr key={lease.id} className="border-b border-obsidian-700/50 last:border-0">
+                          <td className="table-cell">
+                            {tenant ? (
+                              <Link
+                                to={`/tenant/${tenant.id}`}
+                                className="text-warm-400 hover:text-brass transition-colors"
+                              >
+                                {tenant.company_name}
+                              </Link>
+                            ) : (
+                              <span className="text-warm-500">Unknown</span>
+                            )}
+                          </td>
+                          <td className="table-cell text-warm-400">{space?.name || '—'}</td>
+                          <td className="table-cell">
+                            <span className="badge bg-obsidian-700/50 text-warm-400 border border-obsidian-600/50">
+                              {lease.lease_type}
+                            </span>
+                          </td>
+                          <td className="table-cell text-warm-400 tabular">{formatDate(lease.start_date)}</td>
+                          <td className="table-cell text-warm-400 tabular">{formatDate(lease.end_date)}</td>
+                          <td className="table-cell text-right text-warm-400 tabular">{formatCurrency(lease.monthly_rent)}</td>
+                          <td className="table-cell text-right text-warm-400 tabular">{formatCurrency(lease.annual_rent)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* Bottom accent */}
+      <div className="h-px bg-gradient-to-r from-transparent via-brass/20 to-transparent" />
+      <div className="text-center py-6">
+        <p className="text-warm-500 text-[10px] font-body uppercase tracking-[0.2em]">Apex Capital Partners &middot; Portfolio Intelligence</p>
+      </div>
+    </div>
+  )
+}

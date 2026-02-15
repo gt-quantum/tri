@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 export default function LeaseTimeline({ data }) {
   const { leases, tenants, spaces, properties } = data
@@ -38,8 +39,10 @@ export default function LeaseTimeline({ data }) {
 
         return {
           id: l.id,
+          tenantId: tenant?.id,
           tenant: tenant?.company_name || 'Unknown',
           space: space?.name || '',
+          propertyId: property?.id,
           property: property?.name || '',
           endDate,
           endDateStr: l.end_date,
@@ -110,9 +113,19 @@ export default function LeaseTimeline({ data }) {
               >
                 {/* Tenant name */}
                 <div className="w-36 shrink-0">
-                  <div className="text-warm-white text-sm font-body font-medium truncate group-hover:text-brass transition-colors" title={item.tenant}>
-                    {item.tenant}
-                  </div>
+                  {item.tenantId ? (
+                    <Link
+                      to={`/tenant/${item.tenantId}`}
+                      className="text-warm-white text-sm font-body font-medium truncate block group-hover:text-brass transition-colors"
+                      title={item.tenant}
+                    >
+                      {item.tenant}
+                    </Link>
+                  ) : (
+                    <div className="text-warm-white text-sm font-body font-medium truncate" title={item.tenant}>
+                      {item.tenant}
+                    </div>
+                  )}
                 </div>
 
                 {/* Bar */}
@@ -129,7 +142,16 @@ export default function LeaseTimeline({ data }) {
 
                 {/* Property / Space */}
                 <div className="w-44 shrink-0 text-right hidden md:block">
-                  <span className="text-warm-200 text-xs font-body">{item.property}</span>
+                  {item.propertyId ? (
+                    <Link
+                      to={`/property/${item.propertyId}`}
+                      className="text-warm-200 text-xs font-body hover:text-brass transition-colors"
+                    >
+                      {item.property}
+                    </Link>
+                  ) : (
+                    <span className="text-warm-200 text-xs font-body">{item.property}</span>
+                  )}
                   {item.space && (
                     <span className="text-warm-500 text-xs"> · {item.space}</span>
                   )}
