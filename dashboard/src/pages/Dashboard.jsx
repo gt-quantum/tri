@@ -14,9 +14,8 @@ export default function Dashboard({ data }) {
       <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-8">
         {/* Header */}
         <header className="mb-10 animate-fade-up">
-          <div className="flex items-baseline gap-4 mb-1">
+          <div className="mb-1">
             <h1 className="font-display text-3xl text-warm-white tracking-wide">Apex Capital Partners</h1>
-            <span className="badge bg-brass/10 text-brass border border-brass/20">REIT</span>
           </div>
           <p className="font-body text-warm-300 text-sm tracking-wide">Southeast Commercial Portfolio Overview</p>
         </header>
