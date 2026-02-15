@@ -13,7 +13,7 @@ import { listAuditLogQuery } from '@/lib/schemas/audit-log'
 export async function GET(request: NextRequest) {
   const requestId = generateRequestId()
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     const params = parseQuery(request.nextUrl.searchParams, listAuditLogQuery)
 
     let query = supabase

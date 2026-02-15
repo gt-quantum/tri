@@ -263,3 +263,47 @@ Use offset-based pagination with `limit` and `offset` query parameters. Default 
 ### Notes
 - Cursor-based could be added later for specific high-volume endpoints if needed
 - Every list response includes `meta.total` for client-side page count calculations
+
+---
+
+## ADR-016: Supabase Auth with JWT App Metadata
+
+**Date:** 2026-02-15
+**Status:** Accepted (replaces ADR-014 dev-mode auth)
+
+### Context
+Phase 1 used a hardcoded dev-mode auth shim (Sarah Chen admin). Phase 2 replaces this with real Supabase Auth supporting email+password, Google OAuth, and Microsoft OAuth.
+
+### Decision
+- Use Supabase Auth for user authentication with email+password, Google, and Microsoft providers
+- Store `org_id` and `role` in JWT `app_metadata` so every request carries its authorization context
+- Match `auth.users.id = public.users.id` (same UUID) for simple joins and RLS
+- Auth trigger on `auth.users` INSERT handles invitation-based auto-joining
+- Users without an org go through onboarding flow (create org → become admin)
+- `@supabase/ssr` for cookie-based session management in Next.js
+- `@supabase/auth-ui-react` for pre-built login/signup forms with OAuth buttons
+
+### Rationale
+- **JWT claims over DB lookups:** `app_metadata` in the JWT means every API request carries org_id and role without a database query. The `user_org_id()` RLS function reads from JWT first.
+- **Same UUID approach:** Avoids a mapping table between auth and app users. Foreign keys to `users.id` work for both auth identity and app identity.
+- **Trigger-based invitation flow:** When a user signs up and has a pending invitation, the DB trigger automatically creates their app user record and sets their JWT claims. No multi-step client flow needed.
+- **Three-layer RBAC:** Database RLS (last defense), API middleware (clear errors), UI (cosmetic) — defense in depth.
+
+---
+
+## ADR-017: Invitations for Multi-Tenant User Onboarding
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+Users need a way to join existing organizations. Without an invitation system, new signups would always create a new org, making team collaboration impossible.
+
+### Decision
+Token-based invitations stored in the `invitations` table. Admins create invitations via API. The token is embedded in a signup URL. A database trigger on `auth.users` INSERT checks for matching invitations and auto-joins the user.
+
+### Rationale
+- **Token-based over link-only:** Tokens are cryptographically random, verifiable, and revocable. They can be sent via email, Slack, or any channel.
+- **Auto-join via trigger:** Eliminates a separate "accept invitation" step after signup. The user signs up → trigger finds their invitation → they're in the org instantly.
+- **Expiry and revocation:** 7-day default expiry prevents stale invitations. Admins can revoke at any time.
+- **Race condition safety:** `FOR UPDATE` row lock on the invitation prevents duplicate acceptance if two signup requests happen simultaneously.

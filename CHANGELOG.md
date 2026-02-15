@@ -4,6 +4,70 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Phase 2: Authentication & Multi-Tenant Access Control
+
+### Added
+- **Real Supabase Auth** replacing dev-mode auth shim (email+password, Google OAuth, Microsoft OAuth)
+- **Database migration 00007:** `invitations` table (13th table), auth columns on `users` (auth_provider, last_login_at, avatar_url) and `organizations` (created_by, allowed_email_domains)
+- **Auth trigger** (`public.handle_new_user()`) on `auth.users` INSERT — auto-joins invited users, sets JWT app_metadata
+- **Updated `user_org_id()`** — reads org_id from JWT claims first (fast path), falls back to DB lookup
+- **Supabase client setup:**
+  - `lib/supabase-browser.ts` — browser client (anon key, for auth UI)
+  - `lib/supabase-server.ts` — server client with cookie support (for SSR auth)
+  - Existing `lib/supabase.ts` (service_role) unchanged
+- **Auth middleware** (`lib/auth.ts`):
+  - `getAuthContext()` — now async, verifies JWT via Bearer header or session cookies
+  - `getBasicAuthContext()` — for pre-org users (onboarding)
+  - `requireRole()` — unchanged
+- **Next.js middleware** (`middleware.ts`) — route protection:
+  - Unauthenticated → redirect to `/login`
+  - Authenticated without org → redirect to `/onboarding`
+  - Authenticated with org → allow through
+  - Session token refresh on every request
+- **Auth pages:**
+  - `/login` — Supabase Auth UI with Google/Microsoft buttons, Obsidian & Brass theme
+  - `/signup` — with invitation token support (shows org name and role)
+  - `/onboarding` — create organization form (name, type, industry)
+  - `/auth/callback` — OAuth redirect handler
+- **Auth API routes (8 new endpoints):**
+  - `POST /api/v1/auth/create-org` — create org + user record (onboarding)
+  - `GET /api/v1/invitations` — list org invitations (admin/manager)
+  - `POST /api/v1/invitations` — create invitation (admin only)
+  - `GET /api/v1/invitations/lookup?token=xxx` — public invitation lookup (for signup page)
+  - `PATCH /api/v1/invitations/:id/resend` — regenerate token + extend expiry (admin only)
+  - `PATCH /api/v1/invitations/:id/revoke` — revoke invitation (admin only)
+  - `PATCH /api/v1/users/:id/role` — change user role (admin only, prevents last-admin demotion)
+  - `POST /api/v1/users/:id/deactivate` — soft-delete user (admin only)
+  - `POST /api/v1/users/:id/reactivate` — restore soft-deleted user (admin only)
+- **Team management page** (`/settings/team`):
+  - Active users table with role dropdown (admin) and deactivate button
+  - Pending invitations with resend/revoke actions
+  - Deactivated users with reactivate button
+  - Invite user modal (email + role)
+- **Dashboard** (`/`) — authenticated landing page:
+  - Header with org name, user info, logout button, navigation links
+  - Stats cards (properties, spaces, tenants, leases counts)
+  - Quick action links to API docs, team settings
+- **Test user seed script** (`supabase/seed-auth-users.sql`):
+  - `thomas.greg.toler@gmail.com` — admin for Apex Capital Partners (existing test data)
+  - `test-viewer@example.com` — no org (proves multi-tenant isolation)
+- **Zod schemas** for auth routes (`lib/schemas/auth.ts`)
+- **New packages:** `@supabase/ssr`, `@supabase/auth-ui-react`, `@supabase/auth-ui-shared`
+
+### Changed
+- `lib/auth.ts` — `getAuthContext()` is now async (all 38 callers across 18 route files updated)
+- `lib/supabase.ts` — unchanged but now supplemented by browser and server auth clients
+- `.env.local` — added `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+### Design Decisions
+- **JWT app_metadata for auth context:** Avoids DB lookup on every request — org_id and role travel in the JWT
+- **Same UUID for auth.users and public.users:** Simplifies joins, RLS, and foreign keys
+- **Trigger-based invitation flow:** Auto-joins users on signup, no separate "accept" step
+- **Three-layer RBAC:** Database RLS → API middleware → UI — defense in depth
+- **Pre-org state:** Users without an org are routed to onboarding, not blocked
+
+---
+
 ## [2026-02-15] — Phase 1: API Layer & Application Foundation
 
 ### Added

@@ -13,7 +13,7 @@ import { generateRequestId, successResponse } from '@/lib/response'
 export async function GET(request: NextRequest) {
   const requestId = generateRequestId()
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
 
     // Fetch all active picklist values for this org (org-specific + system defaults)
     const { data: picklists } = await supabase

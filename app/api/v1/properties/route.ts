@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const requestId = generateRequestId()
 
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     const params = parseQuery(request.nextUrl.searchParams, listPropertiesQuery)
 
     let query = supabase
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
   const requestId = generateRequestId()
 
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     requireRole(auth, 'manager')
 
     const body = await parseBody(request, createPropertySchema)

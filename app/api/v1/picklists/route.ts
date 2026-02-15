@@ -14,7 +14,7 @@ import { createPicklistSchema, listPicklistsQuery } from '@/lib/schemas/picklist
 export async function GET(request: NextRequest) {
   const requestId = generateRequestId()
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     const params = parseQuery(request.nextUrl.searchParams, listPicklistsQuery)
 
     // Include both org-specific (org_id = auth.orgId) and system defaults (org_id IS NULL)
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const requestId = generateRequestId()
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     requireRole(auth, 'admin')
 
     const body = await parseBody(request, createPicklistSchema)

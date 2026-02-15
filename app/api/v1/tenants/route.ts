@@ -10,7 +10,7 @@ import { createTenantSchema, listTenantsQuery } from '@/lib/schemas/tenants'
 export async function GET(request: NextRequest) {
   const requestId = generateRequestId()
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     const params = parseQuery(request.nextUrl.searchParams, listTenantsQuery)
 
     let query = supabase
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const requestId = generateRequestId()
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     requireRole(auth, 'manager')
 
     const body = await parseBody(request, createTenantSchema)

@@ -156,13 +156,82 @@ Ensures `updated_at` is always accurate on every UPDATE, regardless of whether t
 
 ---
 
+## [2026-02-15] — Auth Infrastructure (Phase 2)
+
+**Migration:** `00007_auth_infrastructure.sql`
+**Status:** Pending — run in Supabase SQL Editor
+
+### New table: invitations
+- `id` (uuid PK), `org_id` (FK → organizations), `email`, `role` (user_role enum)
+- `invited_by` (FK → users), `token` (unique text), `accepted_at`, `revoked_at`, `expires_at`
+- `created_at` (default now())
+
+### Indexes added (4):
+- `idx_invitations_org_id` on invitations(org_id)
+- `idx_invitations_email` on invitations(email)
+- `idx_invitations_token` on invitations(token)
+- `idx_invitations_org_email_accepted` on invitations(org_id, email, accepted_at)
+
+### Columns added to users:
+- `auth_provider` (text) — 'email', 'google', 'azure'
+- `last_login_at` (timestamptz) — updated on each login
+- `avatar_url` (text) — from OAuth provider metadata
+
+### Columns added to organizations:
+- `created_by` (uuid FK → users) — who created the org
+- `allowed_email_domains` (text[] DEFAULT '{}') — future domain restriction
+
+### RLS for invitations:
+- SELECT, INSERT, UPDATE policies scoped to `public.user_org_id()`
+- RLS enabled on invitations table
+
+### Updated function: public.user_org_id()
+- Now reads `org_id` from JWT `app_metadata` first (fast path)
+- Falls back to users table lookup (backwards compat)
+- `COALESCE((auth.jwt() -> 'app_metadata' ->> 'org_id')::uuid, (SELECT org_id FROM public.users WHERE id = auth.uid()))`
+
+### New function: public.handle_new_user()
+- SECURITY DEFINER trigger function on auth.users INSERT
+- Checks invitations for pending invitation matching new user's email
+- If found: creates public.users record, marks invitation accepted, sets JWT app_metadata
+- If not found: does nothing (user goes to onboarding)
+- Handles race conditions with FOR UPDATE row lock
+
+### Trigger: on_auth_user_created
+- AFTER INSERT on auth.users → executes public.handle_new_user()
+
+---
+
+## [2026-02-15] — Auth Test Users Seed
+
+**Script:** `supabase/seed-auth-users.sql`
+**Status:** Pending — run in Supabase SQL Editor AFTER migration 00007
+
+### Users created:
+- **thomas.greg.toler@gmail.com** — admin for existing org (Apex Capital Partners)
+  - Creates auth.users + auth.identities records
+  - Creates public.users record linked to org `a1000000-0000-0000-0000-000000000001`
+  - Sets app_metadata: `{"org_id": "...", "role": "admin"}`
+  - Password: `TestPassword123!`
+- **test-viewer@example.com** — no org association
+  - Creates auth.users + auth.identities records only
+  - NO public.users record (will see onboarding flow)
+  - Password: `TestPassword123!`
+
+### Notes:
+- Idempotent: safe to run multiple times
+- Existing seed users (Sarah, Marcus, Emily) left intact — no interference
+
+---
+
 ## Current State Summary (as of 2026-02-15)
 
-**Tables:** 12 (all created)
-**Indexes:** 39 (34 original + 5 created_by indexes)
-**Unique constraints:** 4 (all created)
-**RLS:** Enabled on all 12 data tables with org_id policies
+**Tables:** 13 (12 original + invitations)
+**Indexes:** 43 (39 previous + 4 invitations indexes)
+**Unique constraints:** 4 (unchanged)
+**RLS:** Enabled on all 13 data tables with org_id policies
 **System picklists:** 42 rows across 8 categories
-**Seed data:** Loaded — 1 org, 3 users, 1 portfolio, 10 properties, 79 spaces, 20 tenants, 70 leases, 10 audit entries
-**Triggers:** 6 BEFORE UPDATE triggers on core tables (auto-set updated_at via `public.set_updated_at()`)
-**Schema changes:** 00005 added created_by/updated_by columns to 5 core entity tables; 00006 added updated_at triggers to 6 tables
+**Seed data:** Loaded — 1 org, 3 original users + 2 auth users, 1 portfolio, 10 properties, 79 spaces, 20 tenants, 70 leases, 10 audit entries
+**Triggers:** 7 (6 BEFORE UPDATE on core tables + 1 AFTER INSERT on auth.users for signup handling)
+**Functions:** `public.user_org_id()` (updated for JWT claims), `public.set_updated_at()`, `public.handle_new_user()`
+**Schema changes:** 00007 adds invitations table, auth columns to users/organizations, auth trigger, updated user_org_id()

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const requestId = generateRequestId()
 
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     const { id } = await params
 
     const { data, error } = await supabase
@@ -115,7 +115,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const requestId = generateRequestId()
 
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     requireRole(auth, 'manager')
     const { id } = await params
 
@@ -203,7 +203,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const requestId = generateRequestId()
 
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     requireRole(auth, 'admin')
     const { id } = await params
 

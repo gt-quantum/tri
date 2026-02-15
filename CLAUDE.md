@@ -2,8 +2,10 @@
 
 ## Tech Stack
 - **Database:** Supabase (PostgreSQL) with Row-Level Security
+- **Auth:** Supabase Auth (email+password, Google OAuth, Microsoft OAuth)
 - **API:** Next.js 15 (App Router) + TypeScript — Route Handlers at `/api/v1/`
 - **Validation:** Zod schemas (also powers OpenAPI 3.1 spec generation)
+- **Auth UI:** `@supabase/auth-ui-react` + `@supabase/ssr` for session management
 - **Legacy Dashboard:** React 18 + Vite + Tailwind 3 (in `dashboard-v1/`, being replaced)
 - **Charts:** Recharts (SVG-based, native React components)
 - **Map:** Leaflet + react-leaflet v4 (CartoDB dark matter tiles, no API key)
@@ -24,8 +26,9 @@ Multi-tenant platform for real estate organizations — including REITs, propert
 - Full schema documentation: `docs/database-schema-v2.md`
 - **Database change log: `docs/database-log.md`** — Every DB change is tracked here. Always update this file after any migration or DB modification.
 
-## Tables (12)
+## Tables (13)
 **Core Entities:** organizations, users, portfolios, properties, spaces, tenants, leases
+**Auth:** invitations
 **Configuration:** picklist_definitions, custom_field_definitions
 **Tracking:** audit_log, data_imports, scores
 
@@ -44,18 +47,28 @@ tenants + spaces/properties → leases (many-to-many via leases)
 
 ### Architecture
 - `app/api/v1/` — Route Handlers (REST endpoints)
-- `lib/supabase.ts` — Server-side Supabase client (service_role key, bypasses RLS)
-- `lib/auth.ts` — Auth middleware (dev mode: hardcoded admin user; production: Supabase Auth)
+- `lib/supabase.ts` — Server-side Supabase admin client (service_role key, bypasses RLS)
+- `lib/supabase-browser.ts` — Browser Supabase client (anon key, for auth UI)
+- `lib/supabase-server.ts` — Server Supabase client with cookie support (for SSR auth)
+- `lib/auth.ts` — Auth middleware (Supabase Auth JWT verification via Bearer token or cookies)
 - `lib/errors.ts` — Consistent error codes and response format
 - `lib/response.ts` — Standard response envelopes (single item, paginated list)
 - `lib/audit.ts` — Audit logging utilities (create, update, soft-delete)
 - `lib/validation.ts` — Zod parsing helpers for body and query params
 - `lib/schemas/` — Zod schemas per entity (validation + OpenAPI generation)
 - `lib/openapi.ts` — OpenAPI 3.1 spec generator (Zod-to-OpenAPI registry, all routes registered)
+- `middleware.ts` — Next.js middleware for route protection (login redirect, onboarding redirect, session refresh)
+
+### Authentication
+- **JWT-based:** `getAuthContext(request)` verifies Supabase JWT from `Authorization: Bearer <token>` header or session cookies
+- **`getBasicAuthContext(request)`** — for pre-org endpoints (e.g., create-org during onboarding)
+- **JWT app_metadata:** Contains `org_id` and `role` — no DB lookup needed per request
+- **Three Supabase clients:** admin (service_role, bypasses RLS), server (anon, cookies), browser (anon, client-side)
+- **Env vars:** `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (server), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (browser)
 
 ### API Patterns
 Every endpoint follows these patterns:
-1. **Auth:** `getAuthContext(request)` extracts user identity (userId, orgId, role)
+1. **Auth:** `await getAuthContext(request)` extracts user identity (userId, orgId, role)
 2. **Authorization:** `requireRole(auth, 'manager')` enforces role hierarchy (viewer < manager < admin)
 3. **Org scoping:** Every query includes `.eq('org_id', auth.orgId)` as a safety net on top of RLS
 4. **Validation:** Request bodies parsed through Zod schemas with clear field-level error messages
@@ -124,11 +137,29 @@ Every endpoint follows these patterns:
 **Audit Log** — `lib/schemas/audit-log.ts`
 - `GET /api/v1/audit-log` — Read-only query (filter: entity_type, entity_id, field_name, action, changed_by, change_source, since/until; enriched with changed_by_name)
 
+**Auth & Onboarding** — `lib/schemas/auth.ts`
+- `POST /api/v1/auth/create-org` — Create org + user (onboarding, pre-org users only)
+- `GET /api/v1/invitations` — List org invitations (admin/manager)
+- `POST /api/v1/invitations` — Create invitation (admin only, generates token + invite URL)
+- `GET /api/v1/invitations/lookup?token=xxx` — Public invitation lookup (for signup page)
+- `PATCH /api/v1/invitations/:id/resend` — Regenerate token + extend expiry (admin only)
+- `PATCH /api/v1/invitations/:id/revoke` — Revoke pending invitation (admin only)
+- `PATCH /api/v1/users/:id/role` — Change user role (admin only, prevents last-admin demotion)
+- `POST /api/v1/users/:id/deactivate` — Soft-delete user (admin only, prevents self-deactivation)
+- `POST /api/v1/users/:id/reactivate` — Restore soft-deleted user (admin only)
+
 **System & Docs**
 - `GET /api/v1/health` — Health check
 - `GET /api/v1/schema` — Full data model discovery (entities, fields, relationships, picklist values, custom fields, conventions)
 - `GET /api/v1/openapi.json` — OpenAPI 3.1 spec (auto-generated from Zod schemas)
 - `GET /api/v1/docs` — Interactive API documentation (Scalar viewer)
+
+### Auth Pages
+- `/login` — Supabase Auth UI (email+password, Google, Microsoft)
+- `/signup` — Same auth UI with invitation token support
+- `/onboarding` — Create organization form (authenticated, no org)
+- `/auth/callback` — OAuth redirect handler
+- `/settings/team` — Team management (users, invitations, roles)
 
 ### Error Format
 ```json
