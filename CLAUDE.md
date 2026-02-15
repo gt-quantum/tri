@@ -2,6 +2,9 @@
 
 ## Tech Stack
 - **Database:** Supabase (PostgreSQL) with Row-Level Security
+- **Dashboard:** React 18 + Vite + Tailwind 3 + React Router 6
+- **Map:** Leaflet + react-leaflet v4 (CartoDB dark matter tiles, no API key)
+- **Hosting:** Vercel (auto-deploys from `main` branch)
 - **Future API Layer:** Node.js
 
 ## Summary
@@ -29,3 +32,29 @@ organizations → portfolios → properties → spaces
 organizations → tenants
 tenants + spaces/properties → leases (many-to-many via leases)
 ```
+
+## Dashboard
+
+**Location:** `dashboard/` — run with `cd dashboard && npm run dev`
+
+### Architecture
+- `src/App.jsx` — Data fetching (all 4 tables via Supabase) + React Router routes
+- `src/pages/` — Page-level components (Dashboard, PropertyDetail, TenantDetail)
+- `src/components/` — Shared components (SummaryCards, PropertiesTable, TenantOverview, LeaseTimeline, VacancyView, PropertyMap)
+- `src/lib/supabase.js` — Supabase client (service_role key, dev only)
+- Styling: Tailwind with custom "Obsidian & Brass" dark theme (see `tailwind.config.js` and `src/index.css`)
+
+### Routes
+- `/` — Dashboard overview (summary cards, portfolio map, properties table, tenants, lease timeline, vacancies)
+- `/property/:id` — Property detail (header, summary cards, spaces table, active leases, lease history)
+- `/tenant/:id` — Tenant detail (header, parent/subsidiary info, portfolio footprint, active leases, lease history)
+
+### Data Flow
+- `App.jsx` fetches all data once on mount (properties, spaces, tenants, leases) and passes to routed pages
+- Components use `useMemo` for derived calculations
+- All property and tenant names are cross-linked via React Router `<Link>`
+
+### Deployment
+- Vercel config: `vercel.json` at repo root
+- SPA rewrite rule routes all paths to `index.html`
+- Auto-deploys on push to `main`

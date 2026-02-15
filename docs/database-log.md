@@ -55,7 +55,7 @@ All database changes are tracked here. No DB modifications are made outside of t
 
 ## [2026-02-14] — Seed Data (supabase/seed.sql)
 
-**Status:** Pending user execution (run in Supabase SQL Editor)
+**Status:** Executed successfully
 
 **Script:** `supabase/seed.sql` — wrapped in BEGIN/COMMIT transaction, fully reversible by deleting rows with org_id `a1000000-0000-0000-0000-000000000001`.
 
@@ -99,11 +99,12 @@ All database changes are tracked here. No DB modifications are made outside of t
 
 ---
 
-## Current State Summary
+## Current State Summary (as of 2026-02-15)
 
 **Tables:** 12 (all created)
 **Indexes:** 34 (all created)
 **Unique constraints:** 4 (all created)
 **RLS:** Enabled on all 12 data tables with org_id policies
 **System picklists:** 42 rows across 8 categories
-**Pending:** `supabase/seed.sql` — run in SQL Editor to load demo data (1 org, 3 users, 1 portfolio, 10 properties, 79 spaces, 20 tenants, 70 leases, 10 audit entries)
+**Seed data:** Loaded — 1 org, 3 users, 1 portfolio, 10 properties, 79 spaces, 20 tenants, 70 leases, 10 audit entries
+**No schema changes since initial creation** — all recent work has been dashboard/frontend only

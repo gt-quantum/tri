@@ -140,3 +140,42 @@ The database schema supports web, desktop, and MCP server clients equally. No cl
 - The platform will be accessed via web app, desktop app, and LLM-powered MCP server
 - The audit log's `change_source` field distinguishes between clients for analytics
 - All clients use the same tables, RLS policies, and API surface
+
+---
+
+## ADR-010: React + Vite + Tailwind Dashboard
+
+**Date:** 2026-02-14
+**Status:** Accepted
+
+### Context
+Need a developer/admin dashboard to visualize portfolio data during development. Must connect directly to Supabase and render seed data.
+
+### Decision
+Use React 18 + Vite + Tailwind CSS 3 for the dashboard. Use service_role key for dev-only access (bypasses RLS). Deploy to Vercel with auto-deploy from `main`.
+
+### Rationale
+- **React 18:** Lightweight, well-known, sufficient for data display
+- **Vite:** Fast dev server and build tool, minimal config
+- **Tailwind:** Utility-first CSS enables rapid UI iteration without separate stylesheet management
+- **Supabase JS client:** Direct queries to PostgreSQL without an API layer — appropriate for dev/admin tooling
+- **Vercel:** Zero-config deploys for Vite apps, free tier sufficient for dev
+
+### Notes
+- Service role key is dev-only — production dashboard will use authenticated Supabase client with RLS
+- Custom "Obsidian & Brass" dark theme defined in `tailwind.config.js` (obsidian backgrounds, brass accents, warm neutral text, Playfair Display + Outfit fonts)
+
+---
+
+## ADR-011: Client-Side Routing with React Router
+
+**Date:** 2026-02-14
+**Status:** Accepted
+
+### Decision
+Use React Router v6 for client-side SPA routing. Data is fetched once at the `App` level and passed to routed pages as props. Vercel SPA rewrite (`vercel.json`) ensures deep links work in production.
+
+### Rationale
+- Detail pages (`/property/:id`, `/tenant/:id`) need unique URLs for direct linking and browser navigation
+- Single data fetch at app level avoids redundant Supabase queries when navigating between pages
+- React Router is the de facto standard for React SPAs — minimal learning curve and good ecosystem support
