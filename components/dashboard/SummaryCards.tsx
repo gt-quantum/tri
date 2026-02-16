@@ -83,7 +83,7 @@ export default function SummaryCards({ data }: { data: PortfolioData }) {
             <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">
               {card.label}
             </div>
-            <div className={`text-2xl font-body font-bold tabular ${colors.value}`}>
+            <div className={`text-2xl font-display tabular ${colors.value}`}>
               {card.value}
             </div>
             {card.bar !== undefined && (

@@ -127,7 +127,7 @@ export default function RevenueConcentration({ data }: { data: PortfolioData }) 
           </ResponsiveContainer>
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
-              <div className="text-warm-white text-xl font-body font-bold tabular">{formatDollars(metrics.totalRent)}</div>
+              <div className="text-warm-white text-xl font-display tabular">{formatDollars(metrics.totalRent)}</div>
               <div className="text-warm-400 text-[10px] font-body uppercase tracking-wider">Monthly</div>
             </div>
           </div>
@@ -138,7 +138,7 @@ export default function RevenueConcentration({ data }: { data: PortfolioData }) 
             <div className="bg-obsidian-800/50 rounded-lg p-3">
               <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-1">Largest Tenant</div>
               <div className="text-warm-white text-sm font-body font-semibold truncate">{metrics.largestName}</div>
-              <div className="text-brass text-lg font-body font-bold tabular">{metrics.largestPct.toFixed(1)}%</div>
+              <div className="text-brass text-lg font-display tabular">{metrics.largestPct.toFixed(1)}%</div>
             </div>
             <div className="bg-obsidian-800/50 rounded-lg p-3">
               <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-1">50% Revenue</div>
@@ -148,7 +148,7 @@ export default function RevenueConcentration({ data }: { data: PortfolioData }) 
             <div className="bg-obsidian-800/50 rounded-lg p-3 col-span-2">
               <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-1">Concentration Index (HHI)</div>
               <div className="flex items-baseline gap-2">
-                <span className="text-warm-white text-lg font-body font-bold tabular">{metrics.hhi.toLocaleString()}</span>
+                <span className="text-warm-white text-lg font-display tabular">{metrics.hhi.toLocaleString()}</span>
                 <span className={`text-xs font-body font-semibold ${metrics.hhiColor}`}>{metrics.hhiLabel}</span>
               </div>
               <div className="mt-1.5 h-1 rounded-full bg-obsidian-700 overflow-hidden">

@@ -35,11 +35,11 @@ function popupHtml(m: { id: string; name: string; city: string; state: string; t
       <div style="display:flex;justify-content:space-between;gap:16px;">
         <div>
           <div style="color:#5c5850;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Occupancy</div>
-          <div style="color:${occupancyColor(m.occupancyPct)};font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;">${m.occupancyPct.toFixed(0)}%</div>
+          <div style="color:${occupancyColor(m.occupancyPct)};font-family:'Playfair Display',Georgia,serif;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;">${m.occupancyPct.toFixed(0)}%</div>
         </div>
         <div style="text-align:right;">
           <div style="color:#5c5850;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Monthly</div>
-          <div style="color:#c8a55a;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;">$${m.monthlyRent.toLocaleString()}</div>
+          <div style="color:#c8a55a;font-family:'Playfair Display',Georgia,serif;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;">$${m.monthlyRent.toLocaleString()}</div>
         </div>
       </div>
       <div data-property-id="${m.id}" style="margin-top:10px;text-align:center;padding:5px;background:rgba(200,165,90,0.08);border:1px solid rgba(200,165,90,0.15);border-radius:5px;color:#c8a55a;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;cursor:pointer;">View Property</div>

@@ -12,6 +12,7 @@
 - **Map:** Leaflet (vanilla, not react-leaflet) — CartoDB dark matter tiles, no API key
 - **Hosting:** Vercel (auto-deploys from `main` branch)
 - **Theme:** "Obsidian & Brass" dark theme (Tailwind config at root)
+- **Fonts:** Playfair Display (display/headings/stats) + Outfit (body/UI) — loaded via Google Fonts
 
 ## Summary
 Multi-tenant platform for real estate organizations — including REITs, property management companies, private owners, and commercial real estate firms — to manage portfolios, properties, spaces, tenants, and leases. Features customizable fields and picklist values per organization, a full audit log for historical change tracking, data import tracking, and a polymorphic scoring framework for risk/opportunity analysis.
@@ -262,6 +263,38 @@ app/
 - Mobile nav: DOM custom event `tri-mobile-nav-toggle` connects TopBar hamburger to CommandRail overlay
 - Leaflet requires `dynamic(() => import(...), { ssr: false })` for SSR safety
 - All data comes through `/api/v1/` routes (not direct Supabase queries)
+
+### Typography Convention
+Two font families loaded via Google Fonts in `app/layout.tsx`:
+- **`font-display`** — Playfair Display (serif). Traditional, authoritative feel for a financial/real estate platform.
+- **`font-body`** — Outfit (sans-serif). Clean, modern sans-serif for readability.
+
+**Where to use each font:**
+
+| Element | Font Class | Example |
+|---|---|---|
+| Page titles (h1) | `font-display text-2xl` | "Properties", "Leases" |
+| Section headings | `.section-heading` (= `font-display text-xl`) | "Spaces", "Active Leases" |
+| KPI/stat values (large numbers) | `font-display tabular` or `.stat-value` | "$2.5M", "94.2%", "127" |
+| Chart titles (h3) | `font-display text-lg` | "Rent Roll Projection" |
+| TRI monogram | `font-display` | CommandRail logo |
+| Stat card labels | `.stat-label` (= `font-body uppercase tracking`) | "Monthly Revenue", "Occupancy" |
+| Body text, descriptions | `font-body` | Subtitles, paragraphs |
+| Table headers | `.table-header` (= `font-body uppercase`) | Column headers |
+| Table cells | `.table-cell` (= `font-body text-sm`) | Row content |
+| Form inputs, selects | `font-body text-sm` | Filters, search bars |
+| Buttons, tabs, nav labels | `font-body` | Tab buttons, nav items |
+| Tooltips, chart axes | `font-body` | Recharts: `fontFamily: 'Outfit'` |
+| Badges | No class needed (inherits body) | Status, type badges |
+
+**CSS utility classes** (defined in `globals.css`):
+- `.section-heading` — `font-display text-xl text-warm-white tracking-wide`
+- `.stat-value` — `font-display tabular` (for KPI numbers)
+- `.stat-label` — `font-body text-[10px] uppercase tracking-[0.14em] text-warm-400 font-semibold`
+- `.table-header` — `font-body text-[11px] uppercase tracking-[0.12em]`
+- `.table-cell` — `font-body text-sm`
+
+**Rule of thumb:** If it's a prominent number that represents a KPI, dollar amount, percentage, or count displayed as a headline stat, use `font-display`. Everything else uses `font-body`.
 
 ## Legacy Dashboard (v1)
 

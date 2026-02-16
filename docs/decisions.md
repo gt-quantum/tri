@@ -498,3 +498,27 @@ Create a shared `useApiList` hook (`lib/hooks/use-api-list.ts`) and three list p
 - **React Query / SWR:** Neither is in the codebase. The custom hook provides caching-free fetching that's sufficient for the current needs. Adding a data-fetching library would be warranted if the app grows to need cache invalidation, optimistic updates, or background refetching.
 - **URL-based filter state:** Encoding filters in URL params would make filtered views shareable/bookmarkable. Chose local state for simplicity — matches the existing dashboard behavior and avoids URL pollution. Can be added later if needed.
 - **Shared pagination component:** The pagination UI is ~30 lines of JSX duplicated across 3 pages. Extracting it would save ~60 lines but add a new component file and props interface. Not worth the indirection for 3 consumers.
+
+---
+
+## ADR-024: Typography Convention — Playfair Display for KPI Values
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+The app uses two font families: Playfair Display (`font-display`, serif) and Outfit (`font-body`, sans-serif). During Phase 6 (list pages), summary card KPI values were built with `font-display`, giving large numbers an authoritative, traditional financial feel. However, the earlier dashboard components (Phase 5) and detail pages used `font-body font-bold` for the same kind of stat values, creating a visual inconsistency across pages.
+
+### Decision
+Standardize all KPI/stat values (large numbers on cards) to use `font-display` (Playfair Display). Add CSS utility classes (`.stat-value`, `.stat-label`) and a typography convention table in `CLAUDE.md` to prevent future inconsistency.
+
+### Typography Rules
+- **`font-display`** (Playfair Display): Page titles, section headings, KPI/stat values, chart titles, TRI monogram
+- **`font-body`** (Outfit): Labels, descriptions, body text, table content, form inputs, navigation, tooltips, badges, chart axes
+
+### Key Design Choice
+**Serif for financial numbers:** Playfair Display's serif letterforms give dollar amounts, percentages, and counts the traditional gravitas expected in real estate and finance interfaces. This aligns with the "Obsidian & Brass" luxury theme — the font choice signals institutional credibility. Outfit (sans-serif) handles everything else for modern readability.
+
+### Alternatives Considered
+- **Outfit for everything:** Simpler but loses the traditional financial character. Makes the UI feel more generic/tech-forward, which doesn't match the industry.
+- **A third font for numbers:** Considered a dedicated tabular/monospace font for numeric values. Rejected — two fonts is enough. `font-variant-numeric: tabular-nums` (via `.tabular` class) handles numeric alignment within Playfair Display.

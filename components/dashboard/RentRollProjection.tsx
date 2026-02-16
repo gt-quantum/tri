@@ -139,7 +139,7 @@ export default function RentRollProjection({ data }: { data: PortfolioData }) {
         <div className="flex items-center gap-4">
           <div className="text-right">
             <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider">Revenue at Risk</div>
-            <div className="text-amber-400 text-lg font-body font-bold tabular">{formatDollars(atRisk)}</div>
+            <div className="text-amber-400 text-lg font-display tabular">{formatDollars(atRisk)}</div>
           </div>
         </div>
       </div>
@@ -202,12 +202,12 @@ export default function RentRollProjection({ data }: { data: PortfolioData }) {
       <div className="grid grid-cols-3 gap-3 mt-4">
         <div className="bg-obsidian-800/50 rounded-lg p-3">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-0.5">Today</div>
-          <div className="text-warm-white text-sm font-body font-bold tabular">{formatDollars(currentRent)}</div>
+          <div className="text-warm-white text-sm font-display tabular">{formatDollars(currentRent)}</div>
           <div className="text-warm-400 text-[10px] font-body">{chartData[0]?.activeLeases} active leases</div>
         </div>
         <div className="bg-obsidian-800/50 rounded-lg p-3">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-0.5">18-Month Contracted</div>
-          <div className={`text-sm font-body font-bold tabular ${endRent < currentRent ? 'text-red-400' : 'text-warm-white'}`}>
+          <div className={`text-sm font-display tabular ${endRent < currentRent ? 'text-red-400' : 'text-warm-white'}`}>
             {formatDollars(endRent)}
           </div>
           <div className="text-warm-400 text-[10px] font-body">
@@ -216,7 +216,7 @@ export default function RentRollProjection({ data }: { data: PortfolioData }) {
         </div>
         <div className="bg-obsidian-800/50 rounded-lg p-3">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-0.5">Guaranteed Floor</div>
-          <div className="text-emerald-400 text-sm font-body font-bold tabular">{formatDollars(floorRent)}</div>
+          <div className="text-emerald-400 text-sm font-display tabular">{formatDollars(floorRent)}</div>
           <div className="text-warm-400 text-[10px] font-body">
             {currentRent > 0 ? ((floorRent / currentRent) * 100).toFixed(0) : 0}% of current
           </div>

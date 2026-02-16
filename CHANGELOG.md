@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Typography Consistency: Standardize Fonts Across All Pages
+
+### Fixed
+- **KPI stat values inconsistency:** Dashboard summary cards, property detail, tenant detail, and chart components were using `font-body` (Outfit) for large stat numbers while list pages used `font-display` (Playfair Display). Standardized all KPI values to `font-display` for the traditional, authoritative financial feel.
+- **Files fixed:**
+  - `components/dashboard/SummaryCards.tsx` — card values: `font-body font-bold` → `font-display`
+  - `app/(app)/properties/[id]/page.tsx` — 5 stat cards (spaces, occupancy, rent values)
+  - `app/(app)/tenants/[id]/page.tsx` — 5 stat cards (leases, properties, sqft, rent values)
+  - `components/dashboard/RevenueConcentration.tsx` — center pie value, largest tenant %, HHI index
+  - `components/dashboard/RentRollProjection.tsx` — revenue at risk, today/18-month/floor values
+  - `components/dashboard/PropertyMap.tsx` — popup stat numbers (occupancy %, monthly rent) now use Playfair Display inline
+
+### Added
+- **CSS utility classes** in `globals.css`:
+  - `.stat-value` — `font-display tabular` (for KPI numbers on cards)
+  - `.stat-label` — standardized label styling for stat card headers
+- **Typography Convention** documented in `CLAUDE.md` — complete reference table for when to use `font-display` vs `font-body`, covering page titles, section headings, KPI values, body text, tables, forms, navigation, tooltips, and badges
+
+### Design Decisions
+- **Playfair Display for KPI numbers:** The serif font gives financial figures the traditional, authoritative feel expected in real estate and finance — matching the "Obsidian & Brass" luxury theme. Outfit (sans-serif) remains the body/UI font for readability.
+- **Rule of thumb:** If it's a prominent number (dollar amount, percentage, count) displayed as a headline stat, use `font-display`. Everything else uses `font-body`.
+- See ADR-024 for full rationale.
+
+---
+
 ## [2026-02-15] — Entity List Pages: Properties, Tenants & Leases
 
 ### Added

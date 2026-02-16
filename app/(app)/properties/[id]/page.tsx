@@ -175,11 +175,11 @@ function PropertyDetail({ id, data }: { id: string; data: any }) {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-10 animate-fade-up stagger-1">
         <div className="card-surface-hover p-5">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Total Spaces</div>
-          <div className="text-2xl font-body font-bold text-warm-white tabular">{propertySpaces.length}</div>
+          <div className="text-2xl font-display text-warm-white tabular">{propertySpaces.length}</div>
         </div>
         <div className="card-surface-hover p-5">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Occupied / Vacant</div>
-          <div className="text-2xl font-body font-bold tabular">
+          <div className="text-2xl font-display tabular">
             <span className="text-emerald-400">{occupiedCount}</span>
             <span className="text-warm-500 mx-1">/</span>
             <span className="text-red-400">{vacantCount}</span>
@@ -187,18 +187,18 @@ function PropertyDetail({ id, data }: { id: string; data: any }) {
         </div>
         <div className="card-surface-hover p-5">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Occupancy Rate</div>
-          <div className={`text-2xl font-body font-bold tabular ${occupancyColor(occupancyRate)}`}>{occupancyRate.toFixed(1)}%</div>
+          <div className={`text-2xl font-display tabular ${occupancyColor(occupancyRate)}`}>{occupancyRate.toFixed(1)}%</div>
           <div className="mt-2 h-1 rounded-full bg-warm-500/20">
             <div className={`h-full rounded-full transition-all duration-700 ${occupancyRate >= 90 ? 'bg-emerald-400' : occupancyRate >= 70 ? 'bg-amber-400' : 'bg-red-400'}`} style={{ width: `${occupancyRate}%` }} />
           </div>
         </div>
         <div className="card-surface-hover p-5">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Monthly Rent</div>
-          <div className="text-2xl font-body font-bold text-brass tabular">{formatCurrency(totalMonthlyRent)}</div>
+          <div className="text-2xl font-display text-brass tabular">{formatCurrency(totalMonthlyRent)}</div>
         </div>
         <div className="card-surface-hover p-5">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Annual Rent</div>
-          <div className="text-2xl font-body font-bold text-brass tabular">{formatCurrency(totalAnnualRent)}</div>
+          <div className="text-2xl font-display text-brass tabular">{formatCurrency(totalAnnualRent)}</div>
         </div>
       </div>
 

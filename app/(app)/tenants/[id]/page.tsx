@@ -184,23 +184,23 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-10 animate-fade-up stagger-2">
         <div className="card-surface-hover p-5">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Active Leases</div>
-          <div className="text-2xl font-body font-bold text-warm-white tabular">{activeLeases.length}</div>
+          <div className="text-2xl font-display text-warm-white tabular">{activeLeases.length}</div>
         </div>
         <div className="card-surface-hover p-5">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Properties</div>
-          <div className="text-2xl font-body font-bold text-warm-white tabular">{propertyIds.size}</div>
+          <div className="text-2xl font-display text-warm-white tabular">{propertyIds.size}</div>
         </div>
         <div className="card-surface-hover p-5">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Total Sqft</div>
-          <div className="text-2xl font-body font-bold text-warm-white tabular">{totalSqft.toLocaleString()}</div>
+          <div className="text-2xl font-display text-warm-white tabular">{totalSqft.toLocaleString()}</div>
         </div>
         <div className="card-surface-hover p-5">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Monthly Rent</div>
-          <div className="text-2xl font-body font-bold text-brass tabular">{formatCurrency(totalMonthlyRent)}</div>
+          <div className="text-2xl font-display text-brass tabular">{formatCurrency(totalMonthlyRent)}</div>
         </div>
         <div className="card-surface-hover p-5">
           <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Annual Rent</div>
-          <div className="text-2xl font-body font-bold text-brass tabular">{formatCurrency(totalAnnualRent)}</div>
+          <div className="text-2xl font-display text-brass tabular">{formatCurrency(totalAnnualRent)}</div>
         </div>
       </div>
 

@@ -73,6 +73,14 @@
     @apply font-display text-xl text-warm-white tracking-wide;
   }
 
+  .stat-value {
+    @apply font-display tabular;
+  }
+
+  .stat-label {
+    @apply text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em];
+  }
+
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider;
   }
