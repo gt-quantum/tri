@@ -1,60 +1,162 @@
 // @ts-nocheck — AI SDK v6 tool() overloads don't resolve with Zod v3 optional params.
 // Runtime types are enforced by Zod schemas; this file is not consumed by external code.
-import { tool } from 'ai'
+import { tool, jsonSchema } from 'ai'
 import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
 import type { AuthContext } from '@/lib/auth'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+/**
+ * Convert a Zod v3 schema to a JSON Schema object compatible with the Anthropic API.
+ * AI SDK v6's internal Zod-to-JSON-Schema conversion doesn't produce `type: "object"`
+ * with Zod v3, which Anthropic requires. This helper builds the JSON Schema explicitly.
+ */
+function zodToParams(schema: z.ZodObject<any>) {
+  const shape = schema.shape
+  const properties: Record<string, any> = {}
+  const required: string[] = []
 
-// Schema definitions (extracted for clean type inference)
-const listPropertiesParams = z.object({
+  for (const [key, value] of Object.entries(shape)) {
+    const field = value as z.ZodTypeAny
+    const desc = field.description
+    let inner = field
+
+    // Unwrap optional
+    let isOptional = false
+    if (inner._def?.typeName === 'ZodOptional') {
+      isOptional = true
+      inner = inner._def.innerType
+    }
+
+    // Build property schema
+    const prop: any = {}
+    if (desc) prop.description = desc
+
+    if (inner._def?.typeName === 'ZodString') {
+      prop.type = 'string'
+    } else if (inner._def?.typeName === 'ZodNumber') {
+      prop.type = 'number'
+      if (inner._def?.checks) {
+        for (const check of inner._def.checks) {
+          if (check.kind === 'int') prop.type = 'integer'
+          if (check.kind === 'min') prop.minimum = check.value
+          if (check.kind === 'max') prop.maximum = check.value
+        }
+      }
+    } else if (inner._def?.typeName === 'ZodBoolean') {
+      prop.type = 'boolean'
+    } else {
+      prop.type = 'string' // fallback
+    }
+
+    properties[key] = prop
+    if (!isOptional) required.push(key)
+  }
+
+  const schema_obj: any = { type: 'object', properties }
+  if (required.length > 0) schema_obj.required = required
+
+  return jsonSchema(schema_obj)
+}
+
+// Schema definitions used for runtime validation inside execute()
+const listPropertiesSchema = z.object({
+  portfolio_id: z.string().uuid().optional(),
+  property_type: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+})
+
+const idSchema = z.object({
+  id: z.string().uuid(),
+})
+
+const listTenantsSchema = z.object({
+  industry: z.string().optional(),
+  credit_rating: z.string().optional(),
+  search: z.string().optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+})
+
+const listLeasesSchema = z.object({
+  tenant_id: z.string().uuid().optional(),
+  property_id: z.string().uuid().optional(),
+  status: z.string().optional(),
+  lease_type: z.string().optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+})
+
+const listSpacesSchema = z.object({
+  property_id: z.string().uuid().optional(),
+  status: z.string().optional(),
+  space_type: z.string().optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+})
+
+const listPortfoliosSchema = z.object({
+  limit: z.number().int().min(1).max(100).optional(),
+})
+
+const auditLogSchema = z.object({
+  entity_type: z.string().optional(),
+  entity_id: z.string().uuid().optional(),
+  action: z.string().optional(),
+  since: z.string().optional(),
+  until: z.string().optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+})
+
+// JSON Schema definitions for the Anthropic API (explicit type: "object")
+const listPropertiesParams = zodToParams(z.object({
   portfolio_id: z.string().uuid().optional().describe('Filter by portfolio ID'),
   property_type: z.string().optional().describe('Filter by type: office, retail, industrial, residential, mixed_use'),
   city: z.string().optional().describe('Filter by city (partial match)'),
   state: z.string().optional().describe('Filter by state (partial match)'),
   limit: z.number().int().min(1).max(100).optional().describe('Max results (default 25)'),
-})
+}))
 
-const idParam = z.object({
+const idParams = zodToParams(z.object({
   id: z.string().uuid().describe('Entity ID'),
-})
+}))
 
-const listTenantsParams = z.object({
+const listTenantsParams = zodToParams(z.object({
   industry: z.string().optional().describe('Filter by industry'),
   credit_rating: z.string().optional().describe('Filter by credit rating: excellent, good, fair, poor, not_rated'),
   search: z.string().optional().describe('Search by company name (partial match)'),
   limit: z.number().int().min(1).max(100).optional().describe('Max results (default 25)'),
-})
+}))
 
-const listLeasesParams = z.object({
+const listLeasesParams = zodToParams(z.object({
   tenant_id: z.string().uuid().optional().describe('Filter by tenant ID'),
   property_id: z.string().uuid().optional().describe('Filter by property ID'),
   status: z.string().optional().describe('Filter by status: active, expired, pending, under_negotiation, month_to_month, terminated'),
   lease_type: z.string().optional().describe('Filter by type: nnn, gross, modified_gross, percentage'),
   limit: z.number().int().min(1).max(100).optional().describe('Max results (default 25)'),
-})
+}))
 
-const listSpacesParams = z.object({
+const listSpacesParams = zodToParams(z.object({
   property_id: z.string().uuid().optional().describe('Filter by property ID'),
   status: z.string().optional().describe('Filter by status: occupied, vacant, under_renovation, not_available'),
   space_type: z.string().optional().describe('Filter by type: office, retail, warehouse, storage, common_area'),
   limit: z.number().int().min(1).max(100).optional().describe('Max results (default 50)'),
-})
+}))
 
-const listPortfoliosParams = z.object({
+const listPortfoliosParams = zodToParams(z.object({
   limit: z.number().int().min(1).max(100).optional().describe('Max results (default 25)'),
-})
+}))
 
-const auditLogParams = z.object({
+const auditLogParams = zodToParams(z.object({
   entity_type: z.string().optional().describe('Filter by entity type: property, tenant, lease, space, portfolio, user'),
   entity_id: z.string().uuid().optional().describe('Filter by specific entity ID'),
   action: z.string().optional().describe('Filter by action: create, update, soft_delete, restore'),
   since: z.string().optional().describe('Filter changes after this ISO date'),
   until: z.string().optional().describe('Filter changes before this ISO date'),
   limit: z.number().int().min(1).max(100).optional().describe('Max results (default 25)'),
-})
+}))
+
+const emptyParams = jsonSchema({ type: 'object', properties: {} })
 
 /**
  * Create the set of tools available to Strata AI.
@@ -66,7 +168,7 @@ export function createTools(auth: AuthContext) {
     listProperties: tool({
       description: 'List properties with optional filters. Returns name, address, type, sqft, value, and portfolio.',
       parameters: listPropertiesParams,
-      execute: async (params: z.infer<typeof listPropertiesParams>) => {
+      execute: async (params: z.infer<typeof listPropertiesSchema>) => {
         const limit = params.limit ?? 25
         let query = supabase
           .from('properties')
@@ -96,8 +198,8 @@ export function createTools(auth: AuthContext) {
 
     getProperty: tool({
       description: 'Get detailed info about a specific property including its spaces and active leases.',
-      parameters: idParam,
-      execute: async (params: z.infer<typeof idParam>) => {
+      parameters: idParams,
+      execute: async (params: z.infer<typeof idSchema>) => {
         const { data: property, error } = await supabase
           .from('properties')
           .select('*, portfolios!inner(name)')
@@ -145,7 +247,7 @@ export function createTools(auth: AuthContext) {
     listTenants: tool({
       description: 'List tenants with optional filters. Returns company name, industry, credit rating, and contact info.',
       parameters: listTenantsParams,
-      execute: async (params: z.infer<typeof listTenantsParams>) => {
+      execute: async (params: z.infer<typeof listTenantsSchema>) => {
         const limit = params.limit ?? 25
         let query = supabase
           .from('tenants')
@@ -168,8 +270,8 @@ export function createTools(auth: AuthContext) {
 
     getTenant: tool({
       description: 'Get detailed info about a specific tenant including subsidiaries and leases.',
-      parameters: idParam,
-      execute: async (params: z.infer<typeof idParam>) => {
+      parameters: idParams,
+      execute: async (params: z.infer<typeof idSchema>) => {
         const { data: tenant, error } = await supabase
           .from('tenants')
           .select('*')
@@ -217,7 +319,7 @@ export function createTools(auth: AuthContext) {
     listLeases: tool({
       description: 'List leases with optional filters. Returns tenant, property, dates, rent, and status.',
       parameters: listLeasesParams,
-      execute: async (params: z.infer<typeof listLeasesParams>) => {
+      execute: async (params: z.infer<typeof listLeasesSchema>) => {
         const limit = params.limit ?? 25
         let query = supabase
           .from('leases')
@@ -252,8 +354,8 @@ export function createTools(auth: AuthContext) {
 
     getLease: tool({
       description: 'Get detailed info about a specific lease including full tenant, property, and space details.',
-      parameters: idParam,
-      execute: async (params: z.infer<typeof idParam>) => {
+      parameters: idParams,
+      execute: async (params: z.infer<typeof idSchema>) => {
         const { data: lease, error } = await supabase
           .from('leases')
           .select('*, tenants!inner(id, company_name, industry, credit_rating), properties!inner(id, name, address, city, state), spaces(id, name, floor, sqft)')
@@ -273,7 +375,7 @@ export function createTools(auth: AuthContext) {
     listSpaces: tool({
       description: 'List spaces with optional filters. Returns name, floor, sqft, status, type, and property.',
       parameters: listSpacesParams,
-      execute: async (params: z.infer<typeof listSpacesParams>) => {
+      execute: async (params: z.infer<typeof listSpacesSchema>) => {
         const limit = params.limit ?? 50
         let query = supabase
           .from('spaces')
@@ -303,7 +405,7 @@ export function createTools(auth: AuthContext) {
     listPortfolios: tool({
       description: 'List all portfolios in the organization.',
       parameters: listPortfoliosParams,
-      execute: async (params: z.infer<typeof listPortfoliosParams>) => {
+      execute: async (params: z.infer<typeof listPortfoliosSchema>) => {
         const limit = params.limit ?? 25
         const { data, error, count } = await supabase
           .from('portfolios')
@@ -321,7 +423,7 @@ export function createTools(auth: AuthContext) {
     getAuditLog: tool({
       description: 'Query the audit log to see who changed what and when. Useful for tracking changes to any entity.',
       parameters: auditLogParams,
-      execute: async (params: z.infer<typeof auditLogParams>) => {
+      execute: async (params: z.infer<typeof auditLogSchema>) => {
         const limit = params.limit ?? 25
         let query = supabase
           .from('audit_log')
@@ -351,7 +453,7 @@ export function createTools(auth: AuthContext) {
 
     getSchema: tool({
       description: 'Get the data model schema including all entities, fields, relationships, and available picklist values.',
-      parameters: z.object({}),
+      parameters: emptyParams,
       execute: async () => {
         const { data: picklists } = await supabase
           .from('picklist_definitions')

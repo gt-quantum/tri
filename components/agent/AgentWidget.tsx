@@ -36,6 +36,7 @@ export default function AgentWidget() {
     status,
     sendMessage,
     stop,
+    error,
   } = useAgentChat({
     context: isOpen ? context : null,
   })
@@ -115,6 +116,11 @@ export default function AgentWidget() {
           data-agent-widget
         >
           <AgentHeader onClose={handleClose} />
+          {error && (
+            <div className="px-3 py-2 bg-red-500/10 border-b border-red-500/20">
+              <p className="font-body text-[13px] text-red-400">{error.message}</p>
+            </div>
+          )}
           <AgentMessageList messages={messages} isStreaming={isStreaming} variant="widget" />
           <AgentInput
             input={input}

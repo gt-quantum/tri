@@ -30,6 +30,7 @@ export default function AgentChatArea({ conversationId }: AgentChatAreaProps) {
     status,
     sendMessage,
     stop,
+    error,
   } = useAgentChat({
     conversationId,
     context: { page: '/agent' },
@@ -113,6 +114,13 @@ export default function AgentChatArea({ conversationId }: AgentChatAreaProps) {
         </div>
       ) : (
         <AgentMessageList messages={messages} isStreaming={isStreaming} variant="page" />
+      )}
+      {error && (
+        <div className="px-6 pb-2">
+          <div className="max-w-3xl mx-auto px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
+            <p className="font-body text-[13px] text-red-400">{error.message}</p>
+          </div>
+        </div>
       )}
       <AgentInput
         input={input}

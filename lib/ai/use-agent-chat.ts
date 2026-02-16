@@ -46,7 +46,10 @@ export function useAgentChat(options: UseAgentChatOptions = {}) {
   const chat = useChat({
     id: options.conversationId ?? undefined,
     transport,
-    onError: options.onError,
+    onError: (error) => {
+      console.error('[Strata AI] Chat error:', error)
+      options.onError?.(error)
+    },
   })
 
   // Wrap sendMessage to accept a plain string
