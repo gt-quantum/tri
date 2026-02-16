@@ -592,3 +592,38 @@ Standardize all KPI/stat values (large numbers on cards) to use `font-display` (
 ### Alternatives Considered
 - **Outfit for everything:** Simpler but loses the traditional financial character. Makes the UI feel more generic/tech-forward, which doesn't match the industry.
 - **A third font for numbers:** Considered a dedicated tabular/monospace font for numeric values. Rejected — two fonts is enough. `font-variant-numeric: tabular-nums` (via `.tabular` class) handles numeric alignment within Playfair Display.
+
+---
+
+## ADR-027: Strata AI — Conversational AI Architecture
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+TRI has a complete REST API (37 routes), semantic layer (picklist + custom field definitions), and MCP server. Users need a way to query their data in natural language without learning the API or navigating multiple pages.
+
+### Decision
+Add a conversational AI interface using Vercel AI SDK + Claude Haiku 4.5 with two entry points: a floating widget on all pages and a dedicated `/agent` page with conversation history.
+
+### Key Design Choices
+
+**Vercel AI SDK 6 + Anthropic provider:** The AI SDK handles streaming, tool calling, and React hooks (`useChat`). The Anthropic provider gives access to Claude models with prompt caching support. Using `@ai-sdk/anthropic` for model access.
+
+**Claude Haiku 4.5 as default model:** Fast (sub-second first token), cheap ($0.80/MTok input, $4/MTok output), and capable enough for data queries and tool calling. Anthropic prompt caching reduces cost further by caching the system prompt + schema context.
+
+**Direct Supabase queries in tools (not HTTP self-calls):** Agent tools query the database directly via the service_role client with `.eq('org_id', auth.orgId)` scoping. This avoids serverless self-invocation overhead (cold starts, serialization, auth round-trips) and is ~10x faster than hitting the REST API. The tool implementations mirror the query logic from existing route handlers.
+
+**Conversation storage in PostgreSQL (not client-side):** Messages stored as a jsonb array in `ai_conversations` table. This enables conversation persistence across devices, history browsing, and future analytics. RLS scoped to org_id like all other tables.
+
+**Widget + Page dual interface:** The floating widget provides quick access from any page with context awareness (knows which page you're on, which entity you're viewing). The full `/agent` page adds conversation history sidebar and more screen real estate. Widget conversations can be promoted to the full page.
+
+**Highlight-to-ask:** Users can select text/numbers on any page and ask the agent about it. The `data-ai-context` attribute pattern provides structured context (entity type, field name, metric) alongside the selected text. Follows the existing `tri-mobile-nav-toggle` custom event pattern.
+
+**System prompt with schema injection:** The system prompt includes the full `/api/v1/schema` response (entities, fields, relationships, picklist values). This gives the agent complete knowledge of the data model without tool calls. Combined with prompt caching, this ~2500+ token schema is cached across requests.
+
+### Alternatives Considered
+- **OpenAI instead of Anthropic:** OpenAI has no prompt caching for system prompts. Anthropic's automatic caching saves ~90% on repeated system prompt tokens. Claude also has better tool use reliability.
+- **MCP server as the tool layer:** The MCP server exists but runs as a separate process communicating via stdio. Using it from a serverless function would require spawning a child process per request. Direct Supabase queries are simpler and faster.
+- **React Server Components for chat:** RSC doesn't support streaming text well in the current Next.js version. The AI SDK's client-side `useChat` hook with a streaming API route is the proven pattern.
+- **Vector search from day one:** Deferred semantic query cache (pgvector) to a later phase. The agent works fine without it, and premature optimization adds complexity. Can be added incrementally.

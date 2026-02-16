@@ -1,13 +1,18 @@
 'use client'
 
 import { Suspense } from 'react'
+import { usePathname } from 'next/navigation'
 import { AuthProvider } from '@/lib/auth-context'
 import { PortfolioContext, usePortfolioProvider } from '@/lib/use-portfolio-context'
 import CommandRail from '@/components/navigation/CommandRail'
 import TopBar from '@/components/navigation/TopBar'
+import AgentWidget from '@/components/agent/AgentWidget'
+import SelectionTooltip from '@/components/agent/SelectionTooltip'
 
 function AppShellInner({ children }: { children: React.ReactNode }) {
   const portfolio = usePortfolioProvider()
+  const pathname = usePathname()
+  const isAgentPage = pathname.startsWith('/agent')
 
   return (
     <PortfolioContext.Provider value={portfolio}>
@@ -16,12 +21,18 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar />
           <main className="flex-1 overflow-y-auto">
-            <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-8">
-              {children}
-            </div>
+            {isAgentPage ? (
+              children
+            ) : (
+              <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-8">
+                {children}
+              </div>
+            )}
           </main>
         </div>
       </div>
+      <AgentWidget />
+      <SelectionTooltip />
     </PortfolioContext.Provider>
   )
 }

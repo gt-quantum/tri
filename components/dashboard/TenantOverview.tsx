@@ -78,6 +78,7 @@ export default memo(function TenantOverview({ data }: { data: PortfolioData }) {
                   className={`border-b border-obsidian-700/50 last:border-0 hover:bg-brass-faint/50 transition-colors group ${
                     row.isChild ? 'bg-obsidian-900/40' : ''
                   }`}
+                  data-ai-context={JSON.stringify({ type: 'entity', entity: 'tenant', id: row.id, name: row.company_name })}
                 >
                   <td className="table-cell">
                     <div className="flex items-center gap-2">

@@ -56,6 +56,7 @@ const segmentLabels: Record<string, string> = {
   'api-keys': 'API Keys',
   'audit-log': 'Audit Log',
   integrations: 'Integrations',
+  agent: 'Strata AI',
 }
 
 export default function TopBar() {

@@ -8,6 +8,7 @@ import {
   Building2,
   Users,
   FileText,
+  Sparkles,
   LogOut,
   Menu,
   X,
@@ -21,6 +22,7 @@ type NavItem = NavLink | NavDivider
 
 const navItems: NavItem[] = [
   { type: 'link', icon: LayoutDashboard, label: 'Dashboard', path: '/', match: (p) => p === '/' },
+  { type: 'link', icon: Sparkles, label: 'Strata AI', path: '/agent', match: (p) => p.startsWith('/agent') },
   { type: 'divider' },
   { type: 'link', icon: Building2, label: 'Properties', path: '/properties', match: (p) => p.startsWith('/properties') },
   { type: 'link', icon: Users, label: 'Tenants', path: '/tenants', match: (p) => p.startsWith('/tenants') },

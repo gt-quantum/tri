@@ -8,13 +8,14 @@ export type ChangeSource =
   | 'ui'
   | 'api'
   | 'mcp'
+  | 'agent'
   | 'desktop'
   | 'csv_import'
   | 'google_sheets'
   | 'system'
 
 const VALID_SOURCES = new Set<ChangeSource>([
-  'ui', 'api', 'mcp', 'desktop', 'csv_import', 'google_sheets', 'system',
+  'ui', 'api', 'mcp', 'agent', 'desktop', 'csv_import', 'google_sheets', 'system',
 ])
 
 /**

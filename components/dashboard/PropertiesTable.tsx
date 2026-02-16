@@ -100,6 +100,7 @@ export default memo(function PropertiesTable({ data }: { data: PortfolioData }) 
                 <tr
                   key={row.id}
                   className="border-b border-obsidian-700/50 last:border-0 hover:bg-brass-faint/50 transition-colors group"
+                  data-ai-context={JSON.stringify({ type: 'entity', entity: 'property', id: row.id, name: row.name })}
                 >
                   <td className="table-cell">
                     <Link

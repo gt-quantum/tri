@@ -155,14 +155,40 @@
 }
 
 @layer utilities {
-  .stagger-1 { animation-delay: 0.05s; }
-  .stagger-2 { animation-delay: 0.1s; }
-  .stagger-3 { animation-delay: 0.15s; }
-  .stagger-4 { animation-delay: 0.2s; }
-  .stagger-5 { animation-delay: 0.25s; }
-  .stagger-6 { animation-delay: 0.3s; }
-  .stagger-7 { animation-delay: 0.35s; }
-  .stagger-8 { animation-delay: 0.4s; }
+  /* Agent Widget — open/close animations */
+  .agent-chat-open {
+    animation: agent-chat-enter 280ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .agent-chat-close {
+    animation: agent-chat-exit 200ms cubic-bezier(0.55, 0, 1, 0.45) forwards;
+  }
+
+  @keyframes agent-chat-enter {
+    0% {
+      opacity: 0;
+      transform: scale(0.4) translateY(12px);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.02) translateY(-2px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes agent-chat-exit {
+    0% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.4) translateY(12px);
+    }
+  }
 
   .tabular { font-variant-numeric: tabular-nums; }
 

@@ -29,18 +29,21 @@ export default memo(function SummaryCards({ data }: { data: PortfolioData }) {
   const cards = [
     {
       label: 'Portfolio Value',
+      metric: 'portfolio_value',
       value: `$${(totalValue / 1_000_000).toFixed(1)}M`,
       sub: `${totalProperties} properties`,
       accent: 'brass',
     },
     {
       label: 'Monthly Revenue',
+      metric: 'monthly_revenue',
       value: `$${totalMonthlyRevenue.toLocaleString()}`,
       sub: `${activeLeases.length} active leases`,
       accent: 'brass',
     },
     {
       label: 'Occupancy',
+      metric: 'occupancy_rate',
       value: `${occupancyRate.toFixed(1)}%`,
       sub: `${occupiedSpaces} of ${totalSpaces} spaces`,
       accent: occupancyRate >= 85 ? 'emerald' : occupancyRate >= 70 ? 'amber' : 'red',
@@ -48,6 +51,7 @@ export default memo(function SummaryCards({ data }: { data: PortfolioData }) {
     },
     {
       label: 'Vacant Spaces',
+      metric: 'vacant_spaces',
       value: vacantSpaces,
       sub: `${spaces
         .filter((s: any) => s.status === 'vacant')
@@ -57,6 +61,7 @@ export default memo(function SummaryCards({ data }: { data: PortfolioData }) {
     },
     {
       label: 'Avg Lease Term',
+      metric: 'avg_lease_term',
       value: `${(avgMonthsRemaining / 12).toFixed(1)}y`,
       sub: `${Math.round(avgMonthsRemaining)} months remaining`,
       accent: 'warm',
@@ -80,6 +85,7 @@ export default memo(function SummaryCards({ data }: { data: PortfolioData }) {
             key={card.label}
             className="card-surface-hover p-5 group"
             style={{ animationDelay: `${i * 0.06}s` }}
+            data-ai-context={JSON.stringify({ type: 'kpi', metric: card.metric })}
           >
             <div className="stat-label mb-3">
               {card.label}

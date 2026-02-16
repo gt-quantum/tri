@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Strata AI: Conversational AI Interface
+
+### Added
+
+**AI Chat Engine**
+- **Streaming chat endpoint** (`POST /api/v1/chat`) — Vercel AI SDK 6 + Claude Haiku 4.5 with Anthropic prompt caching. System prompt includes full schema context for data-aware responses.
+- **10 read-only tools** — listProperties, getProperty, listTenants, getTenant, listLeases, getLease, listSpaces, listPortfolios, getAuditLog, getSchema. Tools query Supabase directly (not HTTP self-calls) with org_id scoping.
+- **Conversation persistence** — `ai_conversations` table (migration 00010) with RLS, stores messages as jsonb array. Full CRUD at `/api/v1/conversations`.
+- **Rate limiting** — In-memory per-user rate limiter (20 messages/minute).
+
+**Floating Widget**
+- **AgentWidget** — Available on all pages except `/agent`. Floating chat window (bottom-right), Obsidian & Brass theme. Full-screen overlay on mobile (<768px). Animated open/close from FAB origin.
+- **Context-aware** — Widget knows current page, portfolio, entity type/ID. Conversations auto-save.
+
+**Dedicated Agent Page**
+- **`/agent` route** — Full-screen chat with conversation history sidebar (260px). Reuses widget components.
+- **CommandRail integration** — Sparkles icon nav item under Dashboard. Breadcrumb support.
+- **Conversation management** — List, load, archive, delete conversations. "New Chat" button.
+
+**Highlight-to-Ask**
+- **Text selection tooltip** — Select text/numbers on any page, tooltip appears with "Ask Strata AI". Click opens widget with selected text as context.
+- **`data-ai-context` attributes** — Dashboard stat cards, table rows, and detail fields provide structured context (entity type, field name, metric) for richer agent responses.
+
+### Changed
+- **`lib/audit.ts`** — Added `'agent'` to `ChangeSource` type and `VALID_SOURCES` set.
+- **`app/(app)/layout.tsx`** — Mounts AgentWidget + SelectionTooltip. Conditional full-width layout for `/agent` page.
+- **`components/navigation/CommandRail.tsx`** — Added Sparkles icon + "Strata AI" nav item.
+- **`components/navigation/TopBar.tsx`** — Added 'agent' to segment labels.
+
+---
+
 ## [2026-02-15] — Performance Optimization Pass
 
 ### Changed

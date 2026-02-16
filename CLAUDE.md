@@ -10,6 +10,7 @@
 - **Legacy Dashboard:** React 18 + Vite + Tailwind 3 (in `dashboard-v1/`, being replaced)
 - **Charts:** Recharts (SVG-based, native React components)
 - **Map:** Leaflet (vanilla, not react-leaflet) — CartoDB dark matter tiles, no API key
+- **AI:** Vercel AI SDK 6 + `@ai-sdk/anthropic` + `@ai-sdk/react` — streaming chat with tool use
 - **Hosting:** Vercel (auto-deploys from `main` branch)
 - **Theme:** "Obsidian & Brass" dark theme (Tailwind config at root)
 - **Fonts:** Playfair Display (display/headings/stats) + Outfit (body/UI) — self-hosted via `next/font/google`
@@ -164,6 +165,14 @@ Every endpoint follows these patterns:
 - `DELETE /api/v1/api-keys/:id` — Revoke key (admin only; immediate, soft revocation)
 - `POST /api/v1/api-keys/:id/rotate` — Rotate key (admin only; revokes old, creates new with same metadata)
 
+**Strata AI** — `lib/schemas/conversations.ts`
+- `POST /api/v1/chat` — Streaming chat (viewer+; rate-limited 20/min/user)
+- `GET /api/v1/conversations` — List conversations (own only; filter: source, include_archived)
+- `POST /api/v1/conversations` — Create empty conversation
+- `GET /api/v1/conversations/:id` — Full conversation with messages (own only)
+- `PATCH /api/v1/conversations/:id` — Update title, archive, promote source
+- `DELETE /api/v1/conversations/:id` — Hard delete
+
 **System & Docs**
 - `GET /api/v1/health` — Health check
 - `GET /api/v1/schema` — Full data model discovery (manager+; entities, fields, relationships, picklist values, custom fields, conventions)
@@ -206,6 +215,7 @@ app/
 │   ├── tenants/               ← Tenants list (/tenants)
 │   │   └── [id]/              ← Tenant detail (/tenants/[id])
 │   ├── leases/                ← Leases list with expandable rows (/leases)
+│   ├── agent/                 ← Strata AI chat page (/agent)
 │   └── settings/              ← Settings with tab navigation
 │       ├── layout.tsx         ← Horizontal tab nav (role-filtered)
 │       ├── profile/           ← Everyone
@@ -224,7 +234,7 @@ app/
 ```
 
 ### Navigation Components (`components/navigation/`)
-- `CommandRail.tsx` — Slim sidebar (60px collapsed, 240px on hover). TRI monogram, PortfolioSwitcher, nav items (Dashboard, Properties, Tenants, Leases, Settings), user avatar dropdown. Mobile: full-screen overlay via hamburger.
+- `CommandRail.tsx` — Slim sidebar (60px collapsed, 240px on hover). TRI monogram, PortfolioSwitcher, nav items (Dashboard, Strata AI, Properties, Tenants, Leases, Settings), user avatar dropdown. Mobile: full-screen overlay via hamburger.
 - `TopBar.tsx` — 52px breadcrumb strip with portfolio context. Search pill placeholder (cmd+K). Exports `setBreadcrumbName(id, name)` for detail pages.
 - `PortfolioSwitcher.tsx` — Dropdown for portfolio selection. "All Portfolios" + portfolio list + "Manage Portfolios" link (admin/manager).
 
@@ -240,6 +250,7 @@ app/
 - `/tenants` — Tenants list (searchable, filterable by industry/credit, paginated)
 - `/tenants/[id]` — Tenant detail (parent/subsidiary, portfolio footprint, leases)
 - `/leases` — Leases list (filterable, sortable, expandable detail rows)
+- `/agent` — Strata AI full-page chat (conversation sidebar + chat area with starter questions)
 - `/settings/*` — 11 settings pages (2 full, 9 placeholder)
 - `/login`, `/signup`, `/onboarding`, `/auth/callback` — Auth flow
 
@@ -321,6 +332,45 @@ Two font families self-hosted via `next/font/google` in `app/layout.tsx` (CSS va
 
 **Location:** `dashboard-v1/` — run with `cd dashboard-v1 && npm run dev`
 Connects directly to Supabase via anon key. **Superseded** by the Next.js dashboard above. Preserved for reference but no longer deployed.
+
+## Strata AI (Conversational AI)
+
+**Stack:** Vercel AI SDK 6 + Claude Haiku 4.5 + Anthropic prompt caching
+**Env:** `ANTHROPIC_API_KEY` required
+
+### Architecture
+- **Chat endpoint:** `POST /api/v1/chat` — streaming response, rate-limited (20/min/user)
+- **System prompt:** `lib/ai/system-prompt.ts` — cached segment (persona + schema) + dynamic segment (user context)
+- **Tools:** `lib/ai/tools.ts` — 10 read-only tools querying Supabase directly (not HTTP self-calls)
+- **Transport:** `DefaultChatTransport` from AI SDK 6 (replaces old api/headers/body pattern)
+
+### Tools (10 read-only)
+listProperties, getProperty, listTenants, getTenant, listLeases, getLease, listSpaces, listPortfolios, getAuditLog, getSchema
+
+### Frontend Components
+- **Widget:** `components/agent/AgentWidget.tsx` — FAB (40px circle, bottom-right) toggles floating chat window (380x520). Full-screen on mobile. Animated scale open/close from FAB origin. Hidden on `/agent`.
+- **Agent Page:** `app/(app)/agent/page.tsx` — full-screen chat with conversation sidebar
+- **Highlight-to-ask:** `components/agent/SelectionTooltip.tsx` — select text → tooltip → opens widget with context
+- **Shared components:** `components/agent/` — AgentHeader, AgentMessageList, AgentMessage, AgentToolResult, AgentInput
+
+### Hooks & Utilities
+- `lib/ai/use-agent-chat.ts` — wraps `useChat()` with auth token injection, input state, simplified sendMessage(text)
+- `lib/ai/agent-context.ts` — `PageContext` type, `parsePageContext()` extracts entity/type from URL
+- `lib/ai/use-text-selection.ts` — text selection detection for highlight-to-ask
+- `lib/ai/rate-limit.ts` — in-memory per-user rate limiter (20 msg/min)
+
+### Conversation Persistence
+- **Table:** `ai_conversations` (migration 00010) — messages stored as jsonb array
+- **Endpoints:** `GET/POST /api/v1/conversations`, `GET/PATCH/DELETE /api/v1/conversations/:id`
+- **Auto-save:** `onFinish` callback in chat route (fire-and-forget)
+
+### Key Patterns
+- AI SDK v6: `useChat()` returns `messages`, `sendMessage`, `status`, `stop` — no `input`/`setInput` (managed locally)
+- `UIMessage.parts[]` — messages have `parts` (TextUIPart, tool parts), not `content`
+- `sendMessage({ text })` — accepts object with text property
+- Tool parts: `type: 'dynamic-tool'` with `toolName`, `state`, `input`, `output`
+- `data-ai-context` attributes on dashboard components for structured highlight-to-ask context
+- Custom event `tri-agent-ask` connects SelectionTooltip to AgentWidget
 
 ## MCP Server
 

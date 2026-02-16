@@ -286,14 +286,45 @@ The leases list endpoint supports filtering by `status` and `lease_type`, but th
 
 ---
 
+## [2026-02-15] — AI Conversations
+
+**Migration:** `00010_ai_conversations.sql`
+**Status:** Pending — run in Supabase SQL Editor
+
+### New table: ai_conversations
+- `id` (uuid PK, gen_random_uuid())
+- `org_id` (uuid FK → organizations) — tenant isolation
+- `user_id` (uuid FK → users) — conversation owner
+- `title` (text NOT NULL DEFAULT 'New conversation') — auto-generated or user-edited
+- `messages` (jsonb NOT NULL DEFAULT '[]') — array of chat messages (loaded/saved atomically)
+- `context` (jsonb) — page origin: page, portfolioId, entityType, entityId, selectedText
+- `source` (text NOT NULL DEFAULT 'widget') — 'widget' or 'page', CHECK constraint
+- `is_archived` (boolean NOT NULL DEFAULT false) — soft archive
+- `created_at` (timestamptz NOT NULL DEFAULT now())
+- `updated_at` (timestamptz NOT NULL DEFAULT now())
+
+### Indexes added (3):
+- `idx_ai_conversations_org_id` on ai_conversations(org_id)
+- `idx_ai_conversations_user_id` on ai_conversations(user_id)
+- `idx_ai_conversations_org_user_updated` on ai_conversations(org_id, user_id, updated_at DESC)
+
+### RLS:
+- SELECT, INSERT, UPDATE, DELETE policies scoped to `public.user_org_id()`
+- RLS enabled on ai_conversations table
+
+### Trigger:
+- `set_ai_conversations_updated_at` — BEFORE UPDATE, reuses `public.set_updated_at()`
+
+---
+
 ## Current State Summary (as of 2026-02-15)
 
-**Tables:** 14 (12 original + invitations + api_keys)
-**Indexes:** 48 (46 previous + 2 lease filter indexes)
+**Tables:** 15 (12 original + invitations + api_keys + ai_conversations)
+**Indexes:** 51 (48 previous + 3 ai_conversations indexes)
 **Unique constraints:** 5 (4 previous + api_keys key_hash unique)
-**RLS:** Enabled on all 14 data tables with org_id policies
+**RLS:** Enabled on all 15 data tables with org_id policies
 **System picklists:** 42 rows across 8 categories
 **Seed data:** Loaded — 1 org, 3 original users + 2 auth users, 1 portfolio, 10 properties, 79 spaces, 20 tenants, 70 leases, 10 audit entries
-**Triggers:** 8 (7 previous + 1 BEFORE UPDATE on api_keys)
+**Triggers:** 9 (8 previous + 1 BEFORE UPDATE on ai_conversations)
 **Functions:** `public.user_org_id()` (updated for JWT claims), `public.set_updated_at()`, `public.handle_new_user()`
-**Schema changes:** 00008 adds api_keys table with SHA-256 hashed key storage, role-based permissions, mandatory expiration, and soft revocation
+**Schema changes:** 00010 adds ai_conversations table for Strata AI chat persistence
