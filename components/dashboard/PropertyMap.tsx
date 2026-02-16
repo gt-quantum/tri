@@ -27,22 +27,22 @@ function occupancyColor(pct: number) {
 function popupHtml(m: { id: string; name: string; city: string; state: string; type: string; occupancyPct: number; monthlyRent: number }) {
   return `
     <div style="background:#0c0c16;border:1px solid rgba(200,165,90,0.15);border-radius:8px;padding:12px 14px;min-width:200px;font-family:Outfit,system-ui,sans-serif;">
-      <div data-property-id="${m.id}" style="color:#ece8e0;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:2px;">${m.name}</div>
-      <div style="color:#7c7870;font-size:11px;margin-bottom:10px;">
+      <div data-property-id="${m.id}" style="color:#ece8e0;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:2px;">${m.name}</div>
+      <div style="color:#a8a498;font-size:12px;margin-bottom:10px;">
         ${m.city}, ${m.state}
-        <span style="margin-left:8px;padding:1px 6px;background:#1c1c28;border:1px solid #28283a;border-radius:4px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#a8a498;">${m.type}</span>
+        <span style="margin-left:8px;padding:1px 6px;background:#1c1c28;border:1px solid #28283a;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#a8a498;">${m.type}</span>
       </div>
       <div style="display:flex;justify-content:space-between;gap:16px;">
         <div>
-          <div style="color:#5c5850;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Occupancy</div>
-          <div style="color:${occupancyColor(m.occupancyPct)};font-family:'Playfair Display',Georgia,serif;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;">${m.occupancyPct.toFixed(0)}%</div>
+          <div style="color:#7c7870;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Occupancy</div>
+          <div style="color:${occupancyColor(m.occupancyPct)};font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;">${m.occupancyPct.toFixed(0)}%</div>
         </div>
         <div style="text-align:right;">
-          <div style="color:#5c5850;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Monthly</div>
-          <div style="color:#c8a55a;font-family:'Playfair Display',Georgia,serif;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;">$${m.monthlyRent.toLocaleString()}</div>
+          <div style="color:#7c7870;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Monthly</div>
+          <div style="color:#c8a55a;font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;">$${m.monthlyRent.toLocaleString()}</div>
         </div>
       </div>
-      <div data-property-id="${m.id}" style="margin-top:10px;text-align:center;padding:5px;background:rgba(200,165,90,0.08);border:1px solid rgba(200,165,90,0.15);border-radius:5px;color:#c8a55a;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;cursor:pointer;">View Property</div>
+      <div data-property-id="${m.id}" style="margin-top:10px;text-align:center;padding:5px;background:rgba(200,165,90,0.08);border:1px solid rgba(200,165,90,0.15);border-radius:5px;color:#c8a55a;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;cursor:pointer;">View Property</div>
     </div>`
 }
 

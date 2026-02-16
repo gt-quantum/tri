@@ -152,23 +152,23 @@ export default function LeasesPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6 animate-fade-up stagger-1">
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Total Leases</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Total Leases</p>
           <p className="text-warm-white text-2xl font-display tabular">{total}</p>
         </div>
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Active</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Active</p>
           <p className="text-emerald-400 text-2xl font-display tabular">{activeLeases.length}</p>
         </div>
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Monthly Revenue</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Monthly Revenue</p>
           <p className="text-brass text-2xl font-display tabular">{formatCurrency(monthlyRevenue)}</p>
         </div>
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Expiring Soon</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Expiring Soon</p>
           <p className={`text-2xl font-display tabular ${expiringSoon > 0 ? 'text-amber-400' : 'text-warm-white'}`}>{expiringSoon}</p>
         </div>
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Avg Monthly Rent</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Avg Monthly Rent</p>
           <p className="text-warm-white text-2xl font-display tabular">{formatCurrency(avgMonthlyRent)}</p>
         </div>
       </div>
@@ -297,25 +297,25 @@ export default function LeasesPage() {
                         <td colSpan={9} className="px-6 py-4">
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                             <div>
-                              <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Annual Rent</p>
+                              <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Annual Rent</p>
                               <p className="text-warm-white font-body text-sm tabular">{formatCurrency(row.annual_rent)}</p>
                             </div>
                             <div>
-                              <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Rent Escalation</p>
+                              <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Rent Escalation</p>
                               <p className="text-warm-white font-body text-sm tabular">
                                 {row.rent_escalation_pct != null ? `${row.rent_escalation_pct}%` : '\u2014'}
                               </p>
                             </div>
                             <div>
-                              <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Security Deposit</p>
+                              <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Security Deposit</p>
                               <p className="text-warm-white font-body text-sm tabular">{formatCurrency(row.security_deposit)}</p>
                             </div>
                             <div>
-                              <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Lease Type</p>
+                              <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Lease Type</p>
                               <p className="text-warm-white font-body text-sm capitalize">{row.lease_type?.replace(/_/g, ' ') || '\u2014'}</p>
                             </div>
                             <div>
-                              <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Time Remaining</p>
+                              <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Time Remaining</p>
                               <p className={`font-body text-sm tabular ${
                                 expiring ? 'text-amber-400 font-medium' : 'text-warm-white'
                               }`}>
@@ -323,11 +323,11 @@ export default function LeasesPage() {
                               </p>
                             </div>
                             <div>
-                              <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Renewal Options</p>
+                              <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Renewal Options</p>
                               <p className="text-warm-white font-body text-sm">{row.renewal_options || '\u2014'}</p>
                             </div>
                             <div className="col-span-2">
-                              <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Terms / Notes</p>
+                              <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Terms / Notes</p>
                               <p className="text-warm-200 font-body text-sm">{row.terms || row.notes || '\u2014'}</p>
                             </div>
                           </div>
@@ -343,7 +343,7 @@ export default function LeasesPage() {
                     <FileText className="w-10 h-10 text-warm-500 mx-auto mb-3" />
                     <p className="text-warm-300 font-body text-sm">No leases found</p>
                     {hasFilters && (
-                      <p className="text-warm-400 font-body text-xs mt-1">Try adjusting your filters</p>
+                      <p className="text-warm-300 font-body text-[13px] mt-1">Try adjusting your filters</p>
                     )}
                   </td>
                 </tr>
@@ -355,7 +355,7 @@ export default function LeasesPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-brass-faint">
-            <p className="text-warm-400 text-xs font-body">
+            <p className="text-warm-300 text-[13px] font-body">
               Showing {(page - 1) * PAGE_SIZE + 1}&ndash;{Math.min(page * PAGE_SIZE, total)} of {total}
             </p>
             <div className="flex items-center gap-1">

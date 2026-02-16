@@ -46,34 +46,34 @@ function CustomTooltip({ active, payload, label }: any) {
     <div className="bg-obsidian-800 border border-brass/20 rounded-lg px-4 py-3 shadow-xl max-w-xs">
       <div className="text-warm-white text-sm font-body font-semibold mb-2">{monthLabel(label)}</div>
       <div className="space-y-1.5">
-        <div className="flex justify-between gap-6 text-xs font-body">
+        <div className="flex justify-between gap-6 text-[13px] font-body">
           <span className="text-warm-300">Total Expiring</span>
           <span className="text-warm-white tabular font-semibold">{formatDollars(data.total)}</span>
         </div>
         {data.lowRent > 0 && (
-          <div className="flex justify-between gap-6 text-xs font-body">
+          <div className="flex justify-between gap-6 text-[13px] font-body">
             <span style={{ color: RISK_COLORS.low }}>Low Risk</span>
             <span className="text-warm-200 tabular">{formatDollars(data.lowRent)} ({data.lowCount} leases)</span>
           </div>
         )}
         {data.moderateRent > 0 && (
-          <div className="flex justify-between gap-6 text-xs font-body">
+          <div className="flex justify-between gap-6 text-[13px] font-body">
             <span style={{ color: RISK_COLORS.moderate }}>Moderate Risk</span>
             <span className="text-warm-200 tabular">{formatDollars(data.moderateRent)} ({data.moderateCount} leases)</span>
           </div>
         )}
         {data.highRent > 0 && (
-          <div className="flex justify-between gap-6 text-xs font-body">
+          <div className="flex justify-between gap-6 text-[13px] font-body">
             <span style={{ color: RISK_COLORS.high }}>High Risk</span>
             <span className="text-warm-200 tabular">{formatDollars(data.highRent)} ({data.highCount} leases)</span>
           </div>
         )}
-        <div className="pt-1 border-t border-brass-faint flex justify-between gap-6 text-xs font-body">
+        <div className="pt-1 border-t border-brass-faint flex justify-between gap-6 text-[13px] font-body">
           <span className="text-warm-300">Leases Expiring</span>
           <span className="text-warm-white tabular font-semibold">{data.leaseCount}</span>
         </div>
         {data.tenantNames?.length > 0 && (
-          <div className="pt-1 text-[11px] text-warm-400 font-body">
+          <div className="pt-1 text-xs text-warm-300 font-body">
             {data.tenantNames.slice(0, 5).join(', ')}
             {data.tenantNames.length > 5 && ` +${data.tenantNames.length - 5} more`}
           </div>
@@ -138,12 +138,12 @@ export default function LeaseExpirationChart({ data }: { data: PortfolioData }) 
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
           <h3 className="font-display text-lg text-warm-white">Lease Expiration Risk</h3>
-          <p className="text-warm-400 text-xs font-body mt-0.5">Monthly rent exposure by tenant credit risk — next 24 months</p>
+          <p className="text-warm-300 text-[13px] font-body mt-0.5">Monthly rent exposure by tenant credit risk — next 24 months</p>
         </div>
         <select
           value={scopePropertyId}
           onChange={e => setScopePropertyId(e.target.value)}
-          className="bg-obsidian-800 border border-brass-faint rounded px-3 py-1.5 text-xs font-body text-warm-200 focus:outline-none focus:border-brass/30 cursor-pointer"
+          className="bg-obsidian-800 border border-brass-faint rounded px-3 py-1.5 text-[13px] font-body text-warm-200 focus:outline-none focus:border-brass/30 cursor-pointer"
         >
           <option value="all">All Properties</option>
           {properties.map((p: any) => (
@@ -160,12 +160,12 @@ export default function LeaseExpirationChart({ data }: { data: PortfolioData }) 
         ].map(item => (
           <div key={item.label} className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: item.color }} />
-            <span className="text-warm-300 text-[10px] font-body uppercase tracking-wider">{item.label}</span>
+            <span className="text-warm-300 text-[11px] font-body uppercase tracking-wider">{item.label}</span>
           </div>
         ))}
         <div className="flex items-center gap-1.5 ml-auto">
           <div className="w-4 h-0.5 rounded" style={{ backgroundColor: '#c8a55a' }} />
-          <span className="text-warm-300 text-[10px] font-body uppercase tracking-wider">Lease Count</span>
+          <span className="text-warm-300 text-[11px] font-body uppercase tracking-wider">Lease Count</span>
         </div>
       </div>
 
@@ -175,17 +175,17 @@ export default function LeaseExpirationChart({ data }: { data: PortfolioData }) 
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(200, 165, 90, 0.06)" vertical={false} />
             <XAxis
               dataKey="month" tickFormatter={monthLabel}
-              tick={{ fill: '#7c7870', fontSize: 10, fontFamily: 'Outfit' }}
+              tick={{ fill: '#7c7870', fontSize: 12, fontFamily: 'Outfit' }}
               axisLine={{ stroke: 'rgba(200, 165, 90, 0.1)' }} tickLine={false} interval={1}
             />
             <YAxis
               yAxisId="rent" tickFormatter={formatDollars}
-              tick={{ fill: '#7c7870', fontSize: 10, fontFamily: 'Outfit' }}
+              tick={{ fill: '#7c7870', fontSize: 12, fontFamily: 'Outfit' }}
               axisLine={false} tickLine={false} width={60}
             />
             <YAxis
               yAxisId="count" orientation="right"
-              tick={{ fill: '#7c7870', fontSize: 10, fontFamily: 'Outfit' }}
+              tick={{ fill: '#7c7870', fontSize: 12, fontFamily: 'Outfit' }}
               axisLine={false} tickLine={false} width={30} allowDecimals={false}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(200, 165, 90, 0.04)' }} />

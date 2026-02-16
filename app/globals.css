@@ -62,7 +62,7 @@
   }
 
   .table-header {
-    @apply px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-warm-300 font-body;
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-warm-200 font-body;
   }
 
   .table-cell {
@@ -78,11 +78,11 @@
   }
 
   .stat-label {
-    @apply text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em];
+    @apply text-warm-300 text-[11px] font-body font-semibold uppercase tracking-[0.14em];
   }
 
   .badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider;
+    @apply inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider;
   }
 
   .brass-line {

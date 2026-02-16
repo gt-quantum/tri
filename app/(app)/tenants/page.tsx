@@ -127,26 +127,26 @@ export default function TenantsPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-up stagger-1">
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Total Tenants</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Total Tenants</p>
           <p className="text-warm-white text-2xl font-display tabular">{total}</p>
         </div>
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Industries</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Industries</p>
           <p className="text-warm-white text-2xl font-display tabular">{industries.size}</p>
         </div>
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Subsidiaries</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Subsidiaries</p>
           <p className="text-warm-white text-2xl font-display tabular">{subsidiaryCount}</p>
         </div>
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Credit Distribution</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Credit Distribution</p>
           <div className="flex items-center gap-1 mt-1">
             {(['excellent', 'good', 'fair', 'poor'] as const).map(rating => {
               const count = data.filter(t => t.credit_rating === rating).length
               if (count === 0) return null
               const colors = creditColors[rating]
               return (
-                <span key={rating} className={`badge ${colors.bg} ${colors.text} border ${colors.border} text-[9px]`}>
+                <span key={rating} className={`badge ${colors.bg} ${colors.text} border ${colors.border} text-[10px]`}>
                   {count} {rating}
                 </span>
               )
@@ -244,7 +244,7 @@ export default function TenantsPage() {
                           {row.company_name}
                         </Link>
                         {row.parent_tenant_id && (
-                          <span className="badge bg-obsidian-700 text-warm-300 border border-obsidian-600 text-[9px]">subsidiary</span>
+                          <span className="badge bg-obsidian-700 text-warm-300 border border-obsidian-600 text-[10px]">subsidiary</span>
                         )}
                       </div>
                     </td>
@@ -261,7 +261,7 @@ export default function TenantsPage() {
                         <div>
                           <p className="text-warm-200 text-sm">{row.primary_contact_name}</p>
                           {row.primary_contact_email && (
-                            <p className="text-warm-400 text-xs">{row.primary_contact_email}</p>
+                            <p className="text-warm-300 text-[13px]">{row.primary_contact_email}</p>
                           )}
                         </div>
                       ) : (
@@ -289,7 +289,7 @@ export default function TenantsPage() {
                     <Users className="w-10 h-10 text-warm-500 mx-auto mb-3" />
                     <p className="text-warm-300 font-body text-sm">No tenants found</p>
                     {hasFilters && (
-                      <p className="text-warm-400 font-body text-xs mt-1">Try adjusting your filters</p>
+                      <p className="text-warm-300 font-body text-[13px] mt-1">Try adjusting your filters</p>
                     )}
                   </td>
                 </tr>
@@ -301,7 +301,7 @@ export default function TenantsPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-brass-faint">
-            <p className="text-warm-400 text-xs font-body">
+            <p className="text-warm-300 text-[13px] font-body">
               Showing {(page - 1) * PAGE_SIZE + 1}&ndash;{Math.min(page * PAGE_SIZE, total)} of {total}
             </p>
             <div className="flex items-center gap-1">

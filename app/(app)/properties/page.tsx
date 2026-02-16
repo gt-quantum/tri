@@ -135,21 +135,21 @@ export default function PropertiesPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-up stagger-1">
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Total Properties</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Total Properties</p>
           <p className="text-warm-white text-2xl font-display tabular">{total}</p>
         </div>
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Total Value</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Total Value</p>
           <p className="text-brass text-2xl font-display tabular">
             ${totalValue >= 1_000_000 ? `${(totalValue / 1_000_000).toFixed(1)}M` : totalValue.toLocaleString()}
           </p>
         </div>
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Total Sqft</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Total Sqft</p>
           <p className="text-warm-white text-2xl font-display tabular">{totalSqft.toLocaleString()}</p>
         </div>
         <div className="card-surface p-4">
-          <p className="text-warm-400 text-xs font-body uppercase tracking-wider mb-1">Avg Year Built</p>
+          <p className="text-warm-300 text-[13px] font-body uppercase tracking-wider mb-1">Avg Year Built</p>
           <p className="text-warm-white text-2xl font-display tabular">{avgYearBuilt ?? '\u2014'}</p>
         </div>
       </div>
@@ -275,7 +275,7 @@ export default function PropertiesPage() {
                     <Building2 className="w-10 h-10 text-warm-500 mx-auto mb-3" />
                     <p className="text-warm-300 font-body text-sm">No properties found</p>
                     {hasFilters && (
-                      <p className="text-warm-400 font-body text-xs mt-1">Try adjusting your filters</p>
+                      <p className="text-warm-300 font-body text-[13px] mt-1">Try adjusting your filters</p>
                     )}
                   </td>
                 </tr>
@@ -287,7 +287,7 @@ export default function PropertiesPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-brass-faint">
-            <p className="text-warm-400 text-xs font-body">
+            <p className="text-warm-300 text-[13px] font-body">
               Showing {(page - 1) * PAGE_SIZE + 1}&ndash;{Math.min(page * PAGE_SIZE, total)} of {total}
             </p>
             <div className="flex items-center gap-1">

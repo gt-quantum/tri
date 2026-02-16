@@ -3,6 +3,7 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
+import { ExternalLink } from 'lucide-react'
 
 interface ApiKeyRecord {
   id: string
@@ -157,7 +158,13 @@ export default function ApiKeysPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="font-display text-2xl text-warm-white tracking-wide">API Keys</h1>
-          <p className="font-body text-warm-300 text-sm mt-1">Manage programmatic access to your organization&apos;s API</p>
+          <p className="font-body text-warm-300 text-sm mt-1">
+            Manage programmatic access to your organization&apos;s API
+            <span className="mx-2 text-warm-500">·</span>
+            <a href="/api/v1/docs" target="_blank" rel="noopener noreferrer" className="text-brass/70 hover:text-brass transition-colors inline-flex items-center gap-1">
+              API Documentation <ExternalLink size={11} />
+            </a>
+          </p>
         </div>
         <button onClick={() => setShowCreateModal(true)} className="px-4 py-2 rounded-lg bg-brass text-obsidian-950 font-body font-semibold text-sm hover:bg-brass-light transition-colors">
           Create API Key
@@ -189,7 +196,7 @@ export default function ApiKeysPage() {
                   <tr key={key.id} className="border-b border-obsidian-700/50 last:border-0">
                     <td className="table-cell">
                       <div className="text-warm-white">{key.name}</div>
-                      {key.description && <div className="text-warm-400 text-xs mt-0.5 truncate max-w-[200px]">{key.description}</div>}
+                      {key.description && <div className="text-warm-300 text-[13px] mt-0.5 truncate max-w-[200px]">{key.description}</div>}
                     </td>
                     <td className="table-cell"><code className="text-warm-300 text-xs bg-obsidian-800 px-1.5 py-0.5 rounded">{key.key_prefix}...</code></td>
                     <td className="table-cell">
@@ -315,8 +322,11 @@ export default function ApiKeysPage() {
               <code className="block w-full p-3 rounded-lg bg-obsidian-800 border border-brass-faint text-warm-white font-mono text-sm break-all select-all">{showKeyModal}</code>
               <button onClick={() => copyToClipboard(showKeyModal)} className="absolute top-2 right-2 px-2 py-1 rounded bg-obsidian-700 text-warm-300 text-xs font-body hover:text-warm-white hover:bg-obsidian-600 transition-colors">{copied ? 'Copied!' : 'Copy'}</button>
             </div>
-            <div className="mt-4 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
-              <p className="text-warm-300 text-xs font-body">Use this key in the Authorization header: <code className="text-warm-200">Authorization: Bearer {showKeyModal.slice(0, 12)}...</code></p>
+            <div className="mt-4 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10 space-y-1.5">
+              <p className="text-warm-200 text-[13px] font-body">Use this key in the Authorization header: <code className="text-warm-200">Authorization: Bearer {showKeyModal.slice(0, 12)}...</code></p>
+              <p className="text-warm-300 text-[13px] font-body">
+                See the <a href="/api/v1/docs" target="_blank" rel="noopener noreferrer" className="text-brass/70 hover:text-brass transition-colors inline-flex items-center gap-0.5">API documentation <ExternalLink size={10} /></a> for available endpoints.
+              </p>
             </div>
             <button onClick={() => setShowKeyModal(null)} className="w-full mt-4 py-2.5 rounded-lg bg-brass text-obsidian-950 font-body font-semibold text-sm hover:bg-brass-light transition-colors">Done</button>
           </div>

@@ -146,23 +146,23 @@ function PropertyDetail({ id, data }: { id: string; data: any }) {
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-4 text-sm font-body">
           {property.total_sqft && (
-            <div><span className="text-warm-400 text-xs uppercase tracking-wider">Sqft</span><span className="text-warm-white ml-2 tabular">{Number(property.total_sqft).toLocaleString()}</span></div>
+            <div><span className="text-warm-300 text-[13px] uppercase tracking-wider">Sqft</span><span className="text-warm-white ml-2 tabular">{Number(property.total_sqft).toLocaleString()}</span></div>
           )}
           {property.year_built && (
-            <div><span className="text-warm-400 text-xs uppercase tracking-wider">Built</span><span className="text-warm-white ml-2 tabular">{property.year_built}</span></div>
+            <div><span className="text-warm-300 text-[13px] uppercase tracking-wider">Built</span><span className="text-warm-white ml-2 tabular">{property.year_built}</span></div>
           )}
           {property.acquisition_date && (
-            <div><span className="text-warm-400 text-xs uppercase tracking-wider">Acquired</span><span className="text-warm-white ml-2">{formatDate(property.acquisition_date)}</span></div>
+            <div><span className="text-warm-300 text-[13px] uppercase tracking-wider">Acquired</span><span className="text-warm-white ml-2">{formatDate(property.acquisition_date)}</span></div>
           )}
           {property.acquisition_price && (
-            <div><span className="text-warm-400 text-xs uppercase tracking-wider">Acq. Price</span><span className="text-warm-white ml-2 tabular">{formatCurrency(property.acquisition_price)}</span></div>
+            <div><span className="text-warm-300 text-[13px] uppercase tracking-wider">Acq. Price</span><span className="text-warm-white ml-2 tabular">{formatCurrency(property.acquisition_price)}</span></div>
           )}
           {property.current_value && (
             <div>
-              <span className="text-warm-400 text-xs uppercase tracking-wider">Current Value</span>
+              <span className="text-warm-300 text-[13px] uppercase tracking-wider">Current Value</span>
               <span className="text-brass ml-2 font-medium tabular">{formatCurrency(property.current_value)}</span>
               {appreciation !== null && (
-                <span className={`ml-2 text-xs tabular ${appreciation >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                <span className={`ml-2 text-[13px] tabular ${appreciation >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   {appreciation >= 0 ? '+' : ''}{appreciation.toFixed(1)}%
                 </span>
               )}
@@ -174,11 +174,11 @@ function PropertyDetail({ id, data }: { id: string; data: any }) {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-10 animate-fade-up stagger-1">
         <div className="card-surface-hover p-5">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Total Spaces</div>
+          <div className="stat-label mb-3">Total Spaces</div>
           <div className="text-2xl font-display text-warm-white tabular">{propertySpaces.length}</div>
         </div>
         <div className="card-surface-hover p-5">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Occupied / Vacant</div>
+          <div className="stat-label mb-3">Occupied / Vacant</div>
           <div className="text-2xl font-display tabular">
             <span className="text-emerald-400">{occupiedCount}</span>
             <span className="text-warm-500 mx-1">/</span>
@@ -186,18 +186,18 @@ function PropertyDetail({ id, data }: { id: string; data: any }) {
           </div>
         </div>
         <div className="card-surface-hover p-5">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Occupancy Rate</div>
+          <div className="stat-label mb-3">Occupancy Rate</div>
           <div className={`text-2xl font-display tabular ${occupancyColor(occupancyRate)}`}>{occupancyRate.toFixed(1)}%</div>
           <div className="mt-2 h-1 rounded-full bg-warm-500/20">
             <div className={`h-full rounded-full transition-all duration-700 ${occupancyRate >= 90 ? 'bg-emerald-400' : occupancyRate >= 70 ? 'bg-amber-400' : 'bg-red-400'}`} style={{ width: `${occupancyRate}%` }} />
           </div>
         </div>
         <div className="card-surface-hover p-5">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Monthly Rent</div>
+          <div className="stat-label mb-3">Monthly Rent</div>
           <div className="text-2xl font-display text-brass tabular">{formatCurrency(totalMonthlyRent)}</div>
         </div>
         <div className="card-surface-hover p-5">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Annual Rent</div>
+          <div className="stat-label mb-3">Annual Rent</div>
           <div className="text-2xl font-display text-brass tabular">{formatCurrency(totalAnnualRent)}</div>
         </div>
       </div>
@@ -207,7 +207,7 @@ function PropertyDetail({ id, data }: { id: string; data: any }) {
         <div className="flex items-center gap-4 mb-5">
           <h2 className="section-heading">Spaces</h2>
           <div className="flex-1 brass-line" />
-          <span className="text-warm-400 text-xs font-body tabular">{propertySpaces.length} total</span>
+          <span className="text-warm-300 text-[13px] font-body tabular">{propertySpaces.length} total</span>
         </div>
         <div className="card-surface overflow-hidden">
           <div className="overflow-x-auto">
@@ -269,7 +269,7 @@ function PropertyDetail({ id, data }: { id: string; data: any }) {
         <div className="flex items-center gap-4 mb-5">
           <h2 className="section-heading">Active Leases</h2>
           <div className="flex-1 brass-line" />
-          <span className="text-warm-400 text-xs font-body tabular">{activeLeases.length} active</span>
+          <span className="text-warm-300 text-[13px] font-body tabular">{activeLeases.length} active</span>
         </div>
         <div className="card-surface overflow-hidden">
           <div className="overflow-x-auto">
@@ -317,7 +317,7 @@ function PropertyDetail({ id, data }: { id: string; data: any }) {
           <div className="flex items-center gap-4 mb-5">
             <h2 className="section-heading text-warm-400">Lease History</h2>
             <div className="flex-1 brass-line opacity-40" />
-            <span className="text-warm-500 text-xs font-body tabular">{expiredLeases.length} expired</span>
+            <span className="text-warm-400 text-[13px] font-body tabular">{expiredLeases.length} expired</span>
           </div>
           <div className="card-surface overflow-hidden opacity-60">
             <div className="overflow-x-auto">

@@ -308,7 +308,7 @@ export default function UsersPage() {
                   <td className="table-cell text-warm-white">
                     {user.full_name || '\u2014'}
                     {user.id === currentUser?.id && (
-                      <span className="ml-2 text-[10px] text-brass font-semibold uppercase tracking-wider">You</span>
+                      <span className="ml-2 text-[11px] text-brass font-semibold uppercase tracking-wider">You</span>
                     )}
                   </td>
                   <td className="table-cell text-warm-200">{user.email}</td>

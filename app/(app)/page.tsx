@@ -64,7 +64,7 @@ export default function Home() {
           </h2>
         </div>
         {portfolioName && (
-          <p className="font-body text-warm-300 text-sm tracking-wide">{portfolioName} Overview</p>
+          <p className="font-body text-warm-200 text-sm tracking-wide">{portfolioName} Overview</p>
         )}
       </header>
 
@@ -99,7 +99,7 @@ export default function Home() {
             <div className="flex items-center gap-4 mb-5">
               <h2 className="section-heading">Lease Expiration Risk</h2>
               <div className="flex-1 brass-line" />
-              <span className="text-warm-400 text-xs font-body tabular">24-month outlook</span>
+              <span className="text-warm-300 text-[13px] font-body tabular">24-month outlook</span>
             </div>
             <LeaseExpirationChart data={data} />
           </section>
@@ -108,7 +108,7 @@ export default function Home() {
             <div className="flex items-center gap-4 mb-5">
               <h2 className="section-heading">Tenant Diversification</h2>
               <div className="flex-1 brass-line" />
-              <span className="text-warm-400 text-xs font-body tabular">
+              <span className="text-warm-300 text-[13px] font-body tabular">
                 {data.leases.filter((l: any) => l.status === 'active').length} active leases
               </span>
             </div>
@@ -119,7 +119,7 @@ export default function Home() {
             <div className="flex items-center gap-4 mb-5">
               <h2 className="section-heading">Revenue Forecast</h2>
               <div className="flex-1 brass-line" />
-              <span className="text-warm-400 text-xs font-body tabular">18-month projection</span>
+              <span className="text-warm-300 text-[13px] font-body tabular">18-month projection</span>
             </div>
             <RentRollProjection data={data} />
           </section>
@@ -128,7 +128,7 @@ export default function Home() {
             <div className="flex items-center gap-4 mb-5">
               <h2 className="section-heading">Portfolio Map</h2>
               <div className="flex-1 brass-line" />
-              <span className="text-warm-400 text-xs font-body tabular">
+              <span className="text-warm-300 text-[13px] font-body tabular">
                 {data.properties.filter((p: any) => p.lat && p.lng).length} locations
               </span>
             </div>
@@ -144,7 +144,7 @@ export default function Home() {
             <div className="flex items-center gap-4 mb-5">
               <h2 className="section-heading">Properties</h2>
               <div className="flex-1 brass-line" />
-              <span className="text-warm-400 text-xs font-body tabular">{data.properties.length} assets</span>
+              <span className="text-warm-300 text-[13px] font-body tabular">{data.properties.length} assets</span>
             </div>
             <PropertiesTable data={data} />
           </section>
@@ -153,7 +153,7 @@ export default function Home() {
             <div className="flex items-center gap-4 mb-5">
               <h2 className="section-heading">Tenants</h2>
               <div className="flex-1 brass-line" />
-              <span className="text-warm-400 text-xs font-body tabular">{data.tenants.length} companies</span>
+              <span className="text-warm-300 text-[13px] font-body tabular">{data.tenants.length} companies</span>
             </div>
             <TenantOverview data={data} />
           </section>
@@ -162,7 +162,7 @@ export default function Home() {
             <div className="flex items-center gap-4 mb-5">
               <h2 className="section-heading">Lease Expirations</h2>
               <div className="flex-1 brass-line" />
-              <span className="text-warm-400 text-xs font-body tabular">{data.leases.length} leases</span>
+              <span className="text-warm-300 text-[13px] font-body tabular">{data.leases.length} leases</span>
             </div>
             <LeaseTimeline data={data} />
           </section>
@@ -171,7 +171,7 @@ export default function Home() {
             <div className="flex items-center gap-4 mb-5">
               <h2 className="section-heading">Vacancies</h2>
               <div className="flex-1 brass-line" />
-              <span className="text-warm-400 text-xs font-body tabular">
+              <span className="text-warm-300 text-[13px] font-body tabular">
                 {data.spaces.filter((s: any) => s.status === 'vacant').length} open
               </span>
             </div>

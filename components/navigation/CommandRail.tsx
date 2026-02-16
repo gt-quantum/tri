@@ -79,7 +79,7 @@ export default function CommandRail() {
         {/* TRI Monogram */}
         <Link href="/" className="rail-item py-4">
           <div className="w-5 h-5 border border-brass/15 rounded flex items-center justify-center flex-shrink-0">
-            <span className="font-display text-[11px] text-brass">T</span>
+            <span className="font-display text-xs text-brass">T</span>
           </div>
           {expanded && (
             <span className="font-display text-sm text-brass tracking-widest rail-label">
@@ -298,8 +298,8 @@ function UserDropdown({
         <div className="absolute bottom-full left-0 mb-2 z-50 card-surface min-w-[220px] py-2 shadow-2xl shadow-black/50">
           <div className="px-4 py-2">
             <div className="font-body text-sm text-warm-white font-medium">{fullName}</div>
-            <div className="font-body text-xs text-warm-400 truncate">{email}</div>
-            <span className={`badge text-[9px] mt-1 ${roleBadgeClass}`}>{role}</span>
+            <div className="font-body text-[13px] text-warm-300 truncate">{email}</div>
+            <span className={`badge text-[10px] mt-1 ${roleBadgeClass}`}>{role}</span>
           </div>
           <div className="rail-divider my-1" />
           <Link

@@ -37,30 +37,30 @@ function CustomTooltip({ active, payload, label }: any) {
     <div className="bg-obsidian-800 border border-brass/20 rounded-lg px-4 py-3 shadow-xl">
       <div className="text-warm-white text-sm font-body font-semibold mb-2">{monthLabel(label)}</div>
       <div className="space-y-1.5">
-        <div className="flex justify-between gap-6 text-xs font-body">
+        <div className="flex justify-between gap-6 text-[13px] font-body">
           <span className="text-warm-300">Contracted</span>
           <span className="text-warm-white tabular">{formatDollars(contracted)}</span>
         </div>
-        <div className="flex justify-between gap-6 text-xs font-body">
+        <div className="flex justify-between gap-6 text-[13px] font-body">
           <span style={{ color: '#10b981' }}>With Escalations</span>
           <span className="text-warm-200 tabular">{formatDollars(escalated)}</span>
         </div>
-        <div className="flex justify-between gap-6 text-xs font-body">
+        <div className="flex justify-between gap-6 text-[13px] font-body">
           <span style={{ color: '#ef4444' }}>Guaranteed Floor</span>
           <span className="text-warm-200 tabular">{formatDollars(floor)}</span>
         </div>
         <div className="pt-1 border-t border-brass-faint">
-          <div className="flex justify-between gap-6 text-xs font-body">
+          <div className="flex justify-between gap-6 text-[13px] font-body">
             <span className="text-warm-400">Revenue at Risk</span>
             <span className="text-amber-400 tabular font-semibold">{formatDollars(contracted - floor)}</span>
           </div>
-          <div className="flex justify-between gap-6 text-xs font-body">
+          <div className="flex justify-between gap-6 text-[13px] font-body">
             <span className="text-warm-400">Delta from Today</span>
             <span className={`tabular font-semibold ${contracted < currentTotal ? 'text-red-400' : 'text-warm-200'}`}>
               {contracted < currentTotal ? '-' : ''}{formatDollars(Math.abs(currentTotal - contracted))}
             </span>
           </div>
-          <div className="flex justify-between gap-6 text-xs font-body">
+          <div className="flex justify-between gap-6 text-[13px] font-body">
             <span className="text-warm-400">Active Leases</span>
             <span className="text-warm-200 tabular">{d.activeLeases}</span>
           </div>
@@ -134,11 +134,11 @@ export default function RentRollProjection({ data }: { data: PortfolioData }) {
       <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
         <div>
           <h3 className="font-display text-lg text-warm-white">Rent Roll Projection</h3>
-          <p className="text-warm-400 text-xs font-body mt-0.5">Revenue trajectory based on current lease terms — 18-month outlook</p>
+          <p className="text-warm-300 text-[13px] font-body mt-0.5">Revenue trajectory based on current lease terms — 18-month outlook</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider">Revenue at Risk</div>
+            <div className="text-warm-400 text-[11px] font-body font-semibold uppercase tracking-wider">Revenue at Risk</div>
             <div className="text-amber-400 text-lg font-display tabular">{formatDollars(atRisk)}</div>
           </div>
         </div>
@@ -147,19 +147,19 @@ export default function RentRollProjection({ data }: { data: PortfolioData }) {
       <div className="flex items-center gap-5 mb-4">
         <div className="flex items-center gap-1.5">
           <div className="w-4 h-0.5 rounded" style={{ backgroundColor: '#c8a55a' }} />
-          <span className="text-warm-300 text-[10px] font-body uppercase tracking-wider">Contracted</span>
+          <span className="text-warm-300 text-[11px] font-body uppercase tracking-wider">Contracted</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-4 h-0.5 rounded" style={{ backgroundColor: '#10b981' }} />
-          <span className="text-warm-300 text-[10px] font-body uppercase tracking-wider">With Escalations</span>
+          <span className="text-warm-300 text-[11px] font-body uppercase tracking-wider">With Escalations</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-4 h-0.5 rounded" style={{ backgroundColor: '#ef4444' }} />
-          <span className="text-warm-300 text-[10px] font-body uppercase tracking-wider">Guaranteed Floor</span>
+          <span className="text-warm-300 text-[11px] font-body uppercase tracking-wider">Guaranteed Floor</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'rgba(245, 158, 11, 0.12)' }} />
-          <span className="text-warm-300 text-[10px] font-body uppercase tracking-wider">Risk Area</span>
+          <span className="text-warm-300 text-[11px] font-body uppercase tracking-wider">Risk Area</span>
         </div>
       </div>
 
@@ -175,12 +175,12 @@ export default function RentRollProjection({ data }: { data: PortfolioData }) {
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(200, 165, 90, 0.06)" vertical={false} />
             <XAxis
               dataKey="month" tickFormatter={monthLabel}
-              tick={{ fill: '#7c7870', fontSize: 10, fontFamily: 'Outfit' }}
+              tick={{ fill: '#7c7870', fontSize: 12, fontFamily: 'Outfit' }}
               axisLine={{ stroke: 'rgba(200, 165, 90, 0.1)' }} tickLine={false}
             />
             <YAxis
               tickFormatter={formatDollars}
-              tick={{ fill: '#7c7870', fontSize: 10, fontFamily: 'Outfit' }}
+              tick={{ fill: '#7c7870', fontSize: 12, fontFamily: 'Outfit' }}
               axisLine={false} tickLine={false} width={65}
               domain={[(dataMin: number) => Math.floor(dataMin * 0.85), 'auto']}
             />
@@ -201,23 +201,23 @@ export default function RentRollProjection({ data }: { data: PortfolioData }) {
 
       <div className="grid grid-cols-3 gap-3 mt-4">
         <div className="bg-obsidian-800/50 rounded-lg p-3">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-0.5">Today</div>
+          <div className="text-warm-400 text-[11px] font-body font-semibold uppercase tracking-wider mb-0.5">Today</div>
           <div className="text-warm-white text-sm font-display tabular">{formatDollars(currentRent)}</div>
-          <div className="text-warm-400 text-[10px] font-body">{chartData[0]?.activeLeases} active leases</div>
+          <div className="text-warm-300 text-[11px] font-body">{chartData[0]?.activeLeases} active leases</div>
         </div>
         <div className="bg-obsidian-800/50 rounded-lg p-3">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-0.5">18-Month Contracted</div>
+          <div className="text-warm-400 text-[11px] font-body font-semibold uppercase tracking-wider mb-0.5">18-Month Contracted</div>
           <div className={`text-sm font-display tabular ${endRent < currentRent ? 'text-red-400' : 'text-warm-white'}`}>
             {formatDollars(endRent)}
           </div>
-          <div className="text-warm-400 text-[10px] font-body">
+          <div className="text-warm-300 text-[11px] font-body">
             {endRent < currentRent ? `-${formatDollars(currentRent - endRent)}` : 'No change'}
           </div>
         </div>
         <div className="bg-obsidian-800/50 rounded-lg p-3">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-0.5">Guaranteed Floor</div>
+          <div className="text-warm-400 text-[11px] font-body font-semibold uppercase tracking-wider mb-0.5">Guaranteed Floor</div>
           <div className="text-emerald-400 text-sm font-display tabular">{formatDollars(floorRent)}</div>
-          <div className="text-warm-400 text-[10px] font-body">
+          <div className="text-warm-300 text-[11px] font-body">
             {currentRent > 0 ? ((floorRent / currentRent) * 100).toFixed(0) : 0}% of current
           </div>
         </div>

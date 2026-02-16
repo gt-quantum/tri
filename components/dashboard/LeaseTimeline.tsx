@@ -78,7 +78,7 @@ export default function LeaseTimeline({ data }: { data: PortfolioData }) {
           <button
             key={btn.key}
             onClick={() => setFilter(btn.key)}
-            className={`px-3 py-1 rounded text-[11px] font-body font-medium uppercase tracking-wider transition-all whitespace-nowrap ${
+            className={`px-3 py-1 rounded text-xs font-body font-medium uppercase tracking-wider transition-all whitespace-nowrap ${
               filter === btn.key
                 ? 'bg-brass/15 text-brass border border-brass/20'
                 : 'text-warm-400 hover:text-warm-200 border border-transparent'
@@ -130,7 +130,7 @@ export default function LeaseTimeline({ data }: { data: PortfolioData }) {
                     style={{ width: `${widthPct}%` }}
                   >
                     <span
-                      className={`text-[10px] font-body font-semibold uppercase tracking-wider ${item.color} truncate`}
+                      className={`text-[11px] font-body font-semibold uppercase tracking-wider ${item.color} truncate`}
                     >
                       {item.category === 'expiring'
                         ? 'Exp. Soon'
@@ -147,22 +147,22 @@ export default function LeaseTimeline({ data }: { data: PortfolioData }) {
                   {item.propertyId ? (
                     <Link
                       href={`/properties/${item.propertyId}`}
-                      className="text-warm-200 text-xs font-body hover:text-brass transition-colors"
+                      className="text-warm-200 text-[13px] font-body hover:text-brass transition-colors"
                     >
                       {item.property}
                     </Link>
                   ) : (
-                    <span className="text-warm-200 text-xs font-body">{item.property}</span>
+                    <span className="text-warm-200 text-[13px] font-body">{item.property}</span>
                   )}
-                  {item.space && <span className="text-warm-500 text-xs"> · {item.space}</span>}
+                  {item.space && <span className="text-warm-400 text-[13px]"> · {item.space}</span>}
                 </div>
 
-                <div className="w-20 shrink-0 text-right text-warm-200 text-xs font-body tabular hidden sm:block">
+                <div className="w-20 shrink-0 text-right text-warm-200 text-[13px] font-body tabular hidden sm:block">
                   ${item.monthlyRent?.toLocaleString()}
                 </div>
 
                 <div className="w-24 shrink-0 text-right">
-                  <span className="text-warm-300 text-xs font-body tabular">{item.endDateStr}</span>
+                  <span className="text-warm-200 text-[13px] font-body tabular">{item.endDateStr}</span>
                 </div>
               </div>
             )

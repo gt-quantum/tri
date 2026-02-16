@@ -278,21 +278,41 @@ Two font families loaded via Google Fonts in `app/layout.tsx`:
 | KPI/stat values (large numbers) | `font-display tabular` or `.stat-value` | "$2.5M", "94.2%", "127" |
 | Chart titles (h3) | `font-display text-lg` | "Rent Roll Projection" |
 | TRI monogram | `font-display` | CommandRail logo |
-| Stat card labels | `.stat-label` (= `font-body uppercase tracking`) | "Monthly Revenue", "Occupancy" |
-| Body text, descriptions | `font-body` | Subtitles, paragraphs |
-| Table headers | `.table-header` (= `font-body uppercase`) | Column headers |
+| Stat card labels | `.stat-label` (= `font-body 11px uppercase tracking`) | "Monthly Revenue", "Occupancy" |
+| Body text, descriptions | `font-body text-sm` (14px) | Subtitles, paragraphs |
+| Subtitles, chart descriptions | `font-body text-[13px]` | "18-month projection", "24 active leases" |
+| Table headers | `.table-header` (= `font-body text-xs uppercase`) | Column headers |
 | Table cells | `.table-cell` (= `font-body text-sm`) | Row content |
 | Form inputs, selects | `font-body text-sm` | Filters, search bars |
-| Buttons, tabs, nav labels | `font-body` | Tab buttons, nav items |
-| Tooltips, chart axes | `font-body` | Recharts: `fontFamily: 'Outfit'` |
-| Badges | No class needed (inherits body) | Status, type badges |
+| Buttons, tabs, nav labels | `font-body text-sm` | Tab buttons, nav items |
+| Chart legend labels | `font-body text-[11px] uppercase` | "Low Risk", "Contracted" |
+| Chart axis ticks | `fontFamily: 'Outfit', fontSize: 12` | Recharts XAxis/YAxis |
+| Tooltips content | `font-body text-[13px]` | Chart tooltip rows |
+| Badges | `.badge` (= 11px uppercase) | Status, type badges |
+| Micro badges (inline) | `text-[10px]` | "parent", "subsidiary", "multi-site" |
+
+**Typography size scale** (use these sizes, not arbitrary values):
+
+| Size | Pixel | Tailwind | Usage |
+|------|-------|----------|-------|
+| Micro badge | 10px | `text-[10px]` | Inline relationship badges only |
+| Caption | 11px | `text-[11px]` | Stat labels, chart legends, badge text |
+| Label | 12px | `text-xs` | Table headers, filter buttons, uppercase labels |
+| Subtitle | 13px | `text-[13px]` | Descriptions, section counters, secondary info, tooltip content |
+| Body | 14px | `text-sm` | Table cells, nav items, form inputs, paragraphs |
+| Chart title | 18px | `text-lg` | Chart/card headings |
+| Section heading | 20px | `text-xl` | Section headings (`.section-heading`) |
+| Page title | 24px | `text-2xl` | Page-level h1 headings |
+
+**Contrast guideline for dark mode:** Small text (13px and below) should use `text-warm-200` or `text-warm-300` for secondary content. Reserve `text-warm-400` only for de-emphasized meta text at 14px+. Never use `text-warm-500` for readable text.
 
 **CSS utility classes** (defined in `globals.css`):
 - `.section-heading` — `font-display text-xl text-warm-white tracking-wide`
 - `.stat-value` — `font-display tabular` (for KPI numbers)
-- `.stat-label` — `font-body text-[10px] uppercase tracking-[0.14em] text-warm-400 font-semibold`
-- `.table-header` — `font-body text-[11px] uppercase tracking-[0.12em]`
+- `.stat-label` — `font-body text-[11px] uppercase tracking-[0.14em] text-warm-300 font-semibold`
+- `.table-header` — `font-body text-xs uppercase tracking-[0.12em] text-warm-200`
 - `.table-cell` — `font-body text-sm`
+- `.badge` — `text-[11px] font-semibold uppercase tracking-wider`
 
 **Rule of thumb:** If it's a prominent number that represents a KPI, dollar amount, percentage, or count displayed as a headline stat, use `font-display`. Everything else uses `font-body`.
 

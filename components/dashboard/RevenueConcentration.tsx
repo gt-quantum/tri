@@ -20,16 +20,16 @@ function CustomTooltip({ active, payload }: any) {
   return (
     <div className="bg-obsidian-800 border border-brass/20 rounded-lg px-4 py-3 shadow-xl">
       <div className="text-warm-white text-sm font-body font-semibold">{d.name}</div>
-      <div className="flex justify-between gap-6 mt-1 text-xs font-body">
+      <div className="flex justify-between gap-6 mt-1 text-[13px] font-body">
         <span className="text-warm-300">Monthly Rent</span>
         <span className="text-warm-white tabular">{formatDollars(d.value)}</span>
       </div>
-      <div className="flex justify-between gap-6 text-xs font-body">
+      <div className="flex justify-between gap-6 text-[13px] font-body">
         <span className="text-warm-300">Share</span>
         <span className="text-warm-white tabular">{d.pct.toFixed(1)}%</span>
       </div>
       {d.leaseCount && (
-        <div className="flex justify-between gap-6 text-xs font-body">
+        <div className="flex justify-between gap-6 text-[13px] font-body">
           <span className="text-warm-300">Active Leases</span>
           <span className="text-warm-white tabular">{d.leaseCount}</span>
         </div>
@@ -107,7 +107,7 @@ export default function RevenueConcentration({ data }: { data: PortfolioData }) 
   return (
     <div className="card-surface p-5">
       <h3 className="font-display text-lg text-warm-white mb-1">Revenue Concentration</h3>
-      <p className="text-warm-400 text-xs font-body mb-5">Tenant diversification across active lease revenue</p>
+      <p className="text-warm-300 text-[13px] font-body mb-5">Tenant diversification across active lease revenue</p>
 
       <div className="flex flex-col lg:flex-row items-center gap-6">
         <div className="w-full lg:w-1/2 h-[280px] relative">
@@ -128,7 +128,7 @@ export default function RevenueConcentration({ data }: { data: PortfolioData }) 
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
               <div className="text-warm-white text-xl font-display tabular">{formatDollars(metrics.totalRent)}</div>
-              <div className="text-warm-400 text-[10px] font-body uppercase tracking-wider">Monthly</div>
+              <div className="text-warm-400 text-[11px] font-body uppercase tracking-wider">Monthly</div>
             </div>
           </div>
         </div>
@@ -136,20 +136,20 @@ export default function RevenueConcentration({ data }: { data: PortfolioData }) 
         <div className="w-full lg:w-1/2 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-obsidian-800/50 rounded-lg p-3">
-              <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-1">Largest Tenant</div>
+              <div className="text-warm-400 text-[11px] font-body font-semibold uppercase tracking-wider mb-1">Largest Tenant</div>
               <div className="text-warm-white text-sm font-body font-semibold truncate">{metrics.largestName}</div>
               <div className="text-brass text-lg font-display tabular">{metrics.largestPct.toFixed(1)}%</div>
             </div>
             <div className="bg-obsidian-800/50 rounded-lg p-3">
-              <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-1">50% Revenue</div>
+              <div className="text-warm-400 text-[11px] font-body font-semibold uppercase tracking-wider mb-1">50% Revenue</div>
               <div className="text-warm-white text-sm font-body font-semibold">{metrics.tenantsFor50} tenants</div>
-              <div className="text-warm-300 text-xs font-body">of {metrics.totalTenants} total</div>
+              <div className="text-warm-200 text-[13px] font-body">of {metrics.totalTenants} total</div>
             </div>
             <div className="bg-obsidian-800/50 rounded-lg p-3 col-span-2">
-              <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-wider mb-1">Concentration Index (HHI)</div>
+              <div className="text-warm-400 text-[11px] font-body font-semibold uppercase tracking-wider mb-1">Concentration Index (HHI)</div>
               <div className="flex items-baseline gap-2">
                 <span className="text-warm-white text-lg font-display tabular">{metrics.hhi.toLocaleString()}</span>
-                <span className={`text-xs font-body font-semibold ${metrics.hhiColor}`}>{metrics.hhiLabel}</span>
+                <span className={`text-[13px] font-body font-semibold ${metrics.hhiColor}`}>{metrics.hhiLabel}</span>
               </div>
               <div className="mt-1.5 h-1 rounded-full bg-obsidian-700 overflow-hidden">
                 <div
@@ -165,7 +165,7 @@ export default function RevenueConcentration({ data }: { data: PortfolioData }) 
 
           <div className="space-y-1.5">
             {slices.map((s: any, i: number) => (
-              <div key={s.name} className="flex items-center gap-2 text-xs font-body">
+              <div key={s.name} className="flex items-center gap-2 text-[13px] font-body">
                 <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: SLICE_COLORS[i % SLICE_COLORS.length] }} />
                 <span className="text-warm-200 truncate flex-1">{s.name}</span>
                 <span className="text-warm-300 tabular">{s.pct.toFixed(1)}%</span>

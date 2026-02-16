@@ -80,7 +80,7 @@ export default function PortfolioSwitcher({ expanded }: PortfolioSwitcherProps) 
                 {p.name}
               </span>
               {p.property_count !== undefined && (
-                <span className="ml-auto text-warm-400 text-xs flex-shrink-0">
+                <span className="ml-auto text-warm-300 text-[13px] flex-shrink-0">
                   {p.property_count}
                 </span>
               )}
@@ -88,7 +88,7 @@ export default function PortfolioSwitcher({ expanded }: PortfolioSwitcherProps) 
           ))}
 
           {portfolios.length === 0 && (
-            <div className="px-4 py-3 text-warm-400 text-xs font-body">
+            <div className="px-4 py-3 text-warm-300 text-[13px] font-body">
               No portfolios found
             </div>
           )}

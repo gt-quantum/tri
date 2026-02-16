@@ -80,7 +80,7 @@ export default function SummaryCards({ data }: { data: PortfolioData }) {
             className="card-surface-hover p-5 group"
             style={{ animationDelay: `${i * 0.06}s` }}
           >
-            <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">
+            <div className="stat-label mb-3">
               {card.label}
             </div>
             <div className={`text-2xl font-display tabular ${colors.value}`}>
@@ -94,7 +94,7 @@ export default function SummaryCards({ data }: { data: PortfolioData }) {
                 />
               </div>
             )}
-            <div className="text-warm-400 text-[11px] font-body mt-2">{card.sub}</div>
+            <div className="text-warm-300 text-xs font-body mt-2">{card.sub}</div>
           </div>
         )
       })}

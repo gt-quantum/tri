@@ -145,8 +145,8 @@ export default function TopBar() {
           {/* Search pill (placeholder) */}
           <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-brass-faint text-warm-400 hover:text-warm-200 hover:border-brass/15 transition-colors">
             <Search size={14} strokeWidth={1.5} />
-            <span className="text-xs font-body hidden lg:inline">Search</span>
-            <kbd className="hidden lg:inline text-[10px] font-body text-warm-500 bg-obsidian-800 px-1.5 py-0.5 rounded border border-brass-faint">
+            <span className="text-[13px] font-body hidden lg:inline">Search</span>
+            <kbd className="hidden lg:inline text-[11px] font-body text-warm-400 bg-obsidian-800 px-1.5 py-0.5 rounded border border-brass-faint">
               &#8984;K
             </kbd>
           </button>

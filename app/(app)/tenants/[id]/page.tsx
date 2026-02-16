@@ -139,13 +139,13 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
                 </a>
               )}
               {tenant.primary_contact_name && (
-                <div><span className="text-warm-400 text-xs uppercase tracking-wider">Contact</span><span className="text-warm-white ml-2">{tenant.primary_contact_name}</span></div>
+                <div><span className="text-warm-300 text-[13px] uppercase tracking-wider">Contact</span><span className="text-warm-white ml-2">{tenant.primary_contact_name}</span></div>
               )}
               {tenant.primary_contact_email && (
-                <div><span className="text-warm-400 text-xs uppercase tracking-wider">Email</span><span className="text-warm-200 ml-2">{tenant.primary_contact_email}</span></div>
+                <div><span className="text-warm-300 text-[13px] uppercase tracking-wider">Email</span><span className="text-warm-200 ml-2">{tenant.primary_contact_email}</span></div>
               )}
               {tenant.primary_contact_phone && (
-                <div><span className="text-warm-400 text-xs uppercase tracking-wider">Phone</span><span className="text-warm-200 ml-2">{tenant.primary_contact_phone}</span></div>
+                <div><span className="text-warm-300 text-[13px] uppercase tracking-wider">Phone</span><span className="text-warm-200 ml-2">{tenant.primary_contact_phone}</span></div>
               )}
             </div>
           </div>
@@ -166,7 +166,7 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
             )}
             {subsidiaries.length > 0 && (
               <div>
-                <div className="text-warm-400 text-xs uppercase tracking-wider font-body mb-2">Subsidiaries</div>
+                <div className="text-warm-300 text-[13px] uppercase tracking-wider font-body mb-2">Subsidiaries</div>
                 <div className="flex flex-wrap gap-2">
                   {subsidiaries.map((sub: any) => (
                     <Link key={sub.id} href={`/tenants/${sub.id}`} className="badge bg-brass/10 text-brass border border-brass/20 hover:bg-brass/20 transition-colors cursor-pointer">
@@ -183,23 +183,23 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
       {/* Portfolio Footprint */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-10 animate-fade-up stagger-2">
         <div className="card-surface-hover p-5">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Active Leases</div>
+          <div className="stat-label mb-3">Active Leases</div>
           <div className="text-2xl font-display text-warm-white tabular">{activeLeases.length}</div>
         </div>
         <div className="card-surface-hover p-5">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Properties</div>
+          <div className="stat-label mb-3">Properties</div>
           <div className="text-2xl font-display text-warm-white tabular">{propertyIds.size}</div>
         </div>
         <div className="card-surface-hover p-5">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Total Sqft</div>
+          <div className="stat-label mb-3">Total Sqft</div>
           <div className="text-2xl font-display text-warm-white tabular">{totalSqft.toLocaleString()}</div>
         </div>
         <div className="card-surface-hover p-5">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Monthly Rent</div>
+          <div className="stat-label mb-3">Monthly Rent</div>
           <div className="text-2xl font-display text-brass tabular">{formatCurrency(totalMonthlyRent)}</div>
         </div>
         <div className="card-surface-hover p-5">
-          <div className="text-warm-400 text-[10px] font-body font-semibold uppercase tracking-[0.14em] mb-3">Annual Rent</div>
+          <div className="stat-label mb-3">Annual Rent</div>
           <div className="text-2xl font-display text-brass tabular">{formatCurrency(totalAnnualRent)}</div>
         </div>
       </div>
@@ -209,7 +209,7 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
         <div className="flex items-center gap-4 mb-5">
           <h2 className="section-heading">Active Leases</h2>
           <div className="flex-1 brass-line" />
-          <span className="text-warm-400 text-xs font-body tabular">{activeLeases.length} active</span>
+          <span className="text-warm-300 text-[13px] font-body tabular">{activeLeases.length} active</span>
         </div>
         <div className="card-surface overflow-hidden">
           <div className="overflow-x-auto">
@@ -255,7 +255,7 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
           <div className="flex items-center gap-4 mb-5">
             <h2 className="section-heading text-warm-400">Lease History</h2>
             <div className="flex-1 brass-line opacity-40" />
-            <span className="text-warm-500 text-xs font-body tabular">{expiredLeases.length} expired</span>
+            <span className="text-warm-400 text-[13px] font-body tabular">{expiredLeases.length} expired</span>
           </div>
           <div className="card-surface overflow-hidden opacity-60">
             <div className="overflow-x-auto">

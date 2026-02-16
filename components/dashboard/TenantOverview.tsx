@@ -81,7 +81,7 @@ export default function TenantOverview({ data }: { data: PortfolioData }) {
                 >
                   <td className="table-cell">
                     <div className="flex items-center gap-2">
-                      {row.isChild && <span className="text-brass-dim ml-2 text-xs">└─</span>}
+                      {row.isChild && <span className="text-brass-dim ml-2 text-[13px]">└─</span>}
                       <Link
                         href={`/tenants/${row.id}`}
                         className={`font-semibold ${row.isChild ? 'text-warm-200' : 'text-warm-white'} group-hover:text-brass transition-colors`}
@@ -89,13 +89,13 @@ export default function TenantOverview({ data }: { data: PortfolioData }) {
                         {row.company_name}
                       </Link>
                       {row.isParent && (
-                        <span className="badge bg-brass/10 text-brass-dim border border-brass/15 text-[9px]">parent</span>
+                        <span className="badge bg-brass/10 text-brass-dim border border-brass/15 text-[10px]">parent</span>
                       )}
                       {row.isChild && (
-                        <span className="badge bg-obsidian-700 text-warm-300 border border-obsidian-600 text-[9px]">subsidiary</span>
+                        <span className="badge bg-obsidian-700 text-warm-300 border border-obsidian-600 text-[10px]">subsidiary</span>
                       )}
                       {row.multiProperty && (
-                        <span className="badge bg-amber-400/8 text-amber-400/80 border border-amber-400/15 text-[9px]">multi-site</span>
+                        <span className="badge bg-amber-400/8 text-amber-400/80 border border-amber-400/15 text-[10px]">multi-site</span>
                       )}
                     </div>
                   </td>
@@ -118,7 +118,7 @@ export default function TenantOverview({ data }: { data: PortfolioData }) {
                           style={{ width: `${Math.min(revenueShare, 100)}%` }}
                         />
                       </div>
-                      <span className="text-warm-300 tabular text-xs">{revenueShare.toFixed(1)}%</span>
+                      <span className="text-warm-200 tabular text-[13px]">{revenueShare.toFixed(1)}%</span>
                     </div>
                   </td>
                 </tr>
