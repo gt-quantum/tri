@@ -88,7 +88,7 @@ export default function VacancyView({ data }: { data: PortfolioData }) {
             <div className="flex items-center justify-between px-5 py-3 border-b border-brass-faint">
               <div>
                 <Link
-                  href={`/property/${group.id}`}
+                  href={`/properties/${group.id}`}
                   className="font-body font-semibold text-warm-white text-sm hover:text-brass transition-colors"
                 >
                   {group.name}
@@ -126,7 +126,7 @@ export default function VacancyView({ data }: { data: PortfolioData }) {
                           </span>
                           {space.negotiation.tenantId ? (
                             <Link
-                              href={`/tenant/${space.negotiation.tenantId}`}
+                              href={`/tenants/${space.negotiation.tenantId}`}
                               className="text-warm-300 text-[11px] font-body hover:text-brass transition-colors"
                             >
                               {space.negotiation.tenant}

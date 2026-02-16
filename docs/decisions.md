@@ -429,3 +429,40 @@ Build a TypeScript MCP server using `@modelcontextprotocol/sdk` with stdio trans
 - **HTTP/SSE transport:** More complex deployment (needs a running server), but enables remote/shared access. Could be added later if needed.
 - **Direct Supabase client:** Would bypass API validation, audit logging, and role enforcement. Rejected for security reasons.
 - **Dynamic tool generation from OpenAPI spec:** Would auto-generate tools from the OpenAPI spec. More maintainable at scale but adds complexity and makes tool descriptions less precise. Manual registration chosen for 47 tools — still manageable and allows custom descriptions per tool.
+
+---
+
+## ADR-022: Frontend Navigation Shell with Route Groups
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+The Next.js app had a flat page structure where each page (dashboard, property detail, tenant detail, settings) rendered its own navigation header, resulting in duplicated nav code and an inconsistent user experience. The app needed a persistent navigation shell with a sidebar, breadcrumbs, portfolio switching, and role-based settings navigation.
+
+### Decision
+Restructure the frontend into Next.js route groups — `(auth)` for unauthenticated pages (no navigation) and `(app)` for authenticated pages (full navigation shell). The shell consists of a CommandRail sidebar, a TopBar breadcrumb strip, and a Settings sub-layout with horizontal tab navigation.
+
+### Key Design Choices
+
+**Route groups over middleware-based layouts:** Next.js route groups (`(auth)`, `(app)`) are transparent to URLs and naturally map different layouts to different page sets. Middleware-based layout switching would be more complex and fragile.
+
+**AuthProvider separate from useDashboardData:** The original `useDashboardData()` hook handled both auth state and data fetching. The shell needs user info (name, role, org) for navigation, but doesn't need portfolio data. `AuthProvider` extracts just auth state (session check, JWT claims, org name) so shell components render immediately without waiting for data fetches.
+
+**Portfolio context via URL parameter:** Portfolio selection is encoded as `?portfolio={id}` in the URL rather than React state or a cookie. This makes portfolio-scoped views linkable and shareable. localStorage provides persistence as a fallback when no URL param is present.
+
+**CommandRail expand-on-hover (not toggle):** The rail is 60px collapsed (icon-only) and expands to 240px on mouse enter with a 200ms CSS transition. This saves screen space while keeping all navigation one hover away. Labels animate in with staggered delays for polish.
+
+**DOM custom events for cross-component communication:** The TopBar hamburger button needs to open the CommandRail's mobile overlay. Rather than lifting state to the layout or using a context provider for a single boolean, a lightweight DOM custom event (`tri-mobile-nav-toggle`) connects the two sibling components with zero coupling.
+
+**Module-level breadcrumb name store:** Detail pages (property, tenant) need to display entity names in TopBar breadcrumbs, but the TopBar renders in the layout above the page. A module-level `Record<string, string>` in TopBar.tsx, populated via `setBreadcrumbName(id, name)` called from detail pages, solves this without prop drilling or context overhead.
+
+**Settings tab navigation with role filtering:** Settings tabs are defined as an array with `roles` arrays. The layout filters visible tabs based on `useAuth().user.role`. Viewers see only Profile and Security. Managers add Portfolios, Custom Fields, Picklists. Admins see all 11 tabs.
+
+**Permanent redirects for URL changes:** `/property/:id` → `/properties/:id`, `/tenant/:id` → `/tenants/:id`, and `/settings/team` → `/settings/users` use Next.js `redirects()` in `next.config.ts` to preserve any existing bookmarks or external links.
+
+### Alternatives Considered
+- **Sidebar toggle button instead of hover:** More explicit but takes up space and adds an extra click. Hover-to-expand is standard in premium dashboards and maximizes content area.
+- **React Context for mobile nav state:** Would require wrapping layout in an additional provider. DOM events are simpler for a boolean toggle between two known components.
+- **Server Component layouts with data fetching:** Would eliminate client-side loading states but requires restructuring all data fetching. Deferred to a future optimization pass — current client-side approach works well.
+- **Full breadcrumb context provider:** Over-engineered for the current needs. Only detail pages need to inject names; the module-level store handles this cleanly.

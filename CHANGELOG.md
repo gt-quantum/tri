@@ -4,6 +4,49 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Frontend Restructure: Navigation Shell & Settings
+
+### Added
+- **App shell with CommandRail + TopBar** — persistent navigation across all authenticated pages
+  - **CommandRail** (`components/navigation/CommandRail.tsx`) — slim 60px brass-accented sidebar, expands to 240px on hover with staggered label animation. Nav items: Dashboard, Properties, Tenants, Leases, Settings. Active state: brass accent bar + brass icon. User avatar dropdown at bottom (profile link, sign out). Mobile: full-screen overlay triggered via hamburger in TopBar.
+  - **TopBar** (`components/navigation/TopBar.tsx`) — 52px breadcrumb strip with portfolio-aware context. Search pill placeholder (cmd+K). User name + role badge. Mobile hamburger menu. Bottom brass gradient line.
+  - **PortfolioSwitcher** (`components/navigation/PortfolioSwitcher.tsx`) — dropdown in CommandRail for switching portfolio context. "All Portfolios" default, portfolio list with checkmarks and property count badges, "Manage Portfolios" link (admin/manager only).
+- **AuthProvider context** (`lib/auth-context.tsx`) — separates auth state from data fetching. Checks Supabase session, extracts org_id/role from JWT, fetches org name. Redirects to `/login` or `/onboarding` as needed. Used by shell components without triggering full data fetch.
+- **Portfolio context hook** (`lib/use-portfolio-context.ts`) — manages portfolio selection via URL parameter (`?portfolio={id}`) + localStorage persistence. Fetches portfolio list, validates stored selection.
+- **Next.js route groups:**
+  - `app/(auth)/` — auth pages (login, signup, onboarding) with no navigation shell
+  - `app/(app)/` — authenticated pages with CommandRail + TopBar
+  - `app/(app)/settings/` — settings pages with horizontal tab navigation
+- **Settings tab navigation** (`app/(app)/settings/layout.tsx`) — role-filtered horizontal tabs:
+  - Personal: Profile, Security (all roles)
+  - Organization: Organization, Users, Invitations, Portfolios, Custom Fields, Picklists, API Keys, Audit Log, Integrations (filtered by role)
+- **9 settings placeholder pages:** profile, security, organization, invitations, portfolios, custom-fields, picklists, audit-log, integrations
+- **Leases placeholder page** at `/leases`
+- **CSS component classes** in `globals.css`: `.command-rail`, `.rail-item`, `.rail-item-active`, `.rail-label`, `.rail-divider`, `.settings-tab`, `.settings-tab-active`, `.animate-slide-in-left`
+
+### Changed
+- **Route structure:**
+  - `/property/[id]` → `/properties/[id]` (permanent redirect added)
+  - `/tenant/[id]` → `/tenants/[id]` (permanent redirect added)
+  - `/settings/team` → `/settings/users` (permanent redirect added)
+  - Auth pages moved to `(auth)` route group (URLs unchanged)
+- **All internal links updated** across 5 dashboard components: PropertiesTable, TenantOverview, LeaseTimeline, VacancyView, PropertyMap
+- **Per-page headers stripped** — Dashboard, property detail, tenant detail, users, and API keys pages no longer render their own navigation headers. The app shell provides navigation.
+- **Dashboard page** — removed inline SVG icons, uses Lucide icons for tab navigation. Uses `useAuth()` for org name instead of `useDashboardData().orgName`.
+- **Property detail** — calls `setBreadcrumbName()` to populate TopBar breadcrumbs with property name
+- **Tenant detail** — calls `setBreadcrumbName()` for tenant company name in breadcrumbs
+- **Settings users** — renamed from "Team Management" to "Users & Roles", stripped custom breadcrumb
+- **Settings API keys** — stripped custom breadcrumb header
+
+### Design Decisions
+- **Route groups for layout isolation:** `(auth)` and `(app)` route groups give different layouts without affecting URLs. Auth pages get no nav; app pages get the full shell.
+- **AuthProvider separate from useDashboardData:** Shell components (CommandRail, TopBar) need user info but not portfolio data. Separating auth from data avoids unnecessary API calls on every page.
+- **DOM custom events for mobile nav:** CommandRail and TopBar are sibling components. A custom event (`tri-mobile-nav-toggle`) enables the TopBar hamburger to open the CommandRail's mobile overlay without prop drilling or lifting state to the layout.
+- **Module-level breadcrumb name store:** Detail pages set entity names via `setBreadcrumbName()` which TopBar reads. Avoids prop drilling through layouts and keeps breadcrumbs decoupled from page components.
+- See ADR-022 for full architectural rationale.
+
+---
+
 ## [2026-02-15] — MCP Server for AI Agent Access
 
 ### Added

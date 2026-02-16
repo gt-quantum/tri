@@ -84,6 +84,41 @@
   .micro-bar {
     @apply h-1 rounded-full transition-all duration-500;
   }
+
+  /* CommandRail */
+  .command-rail {
+    @apply bg-obsidian-900 flex flex-col h-full overflow-hidden;
+    transition: width 200ms ease-out;
+  }
+
+  .rail-item {
+    @apply flex items-center gap-3 px-5 py-2.5 relative cursor-pointer transition-colors duration-150;
+  }
+
+  .rail-item-active::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-brass rounded-r;
+  }
+
+  .rail-label {
+    @apply font-body text-sm whitespace-nowrap;
+    transition: opacity 150ms ease-out, transform 150ms ease-out;
+  }
+
+  .rail-divider {
+    @apply h-px w-8 mx-auto my-2;
+    background: linear-gradient(90deg, transparent, rgba(200, 165, 90, 0.15), transparent);
+  }
+
+  /* Settings tabs */
+  .settings-tab {
+    @apply px-3 py-1.5 rounded-lg text-sm font-body text-warm-400
+           hover:text-warm-200 transition-colors whitespace-nowrap;
+  }
+
+  .settings-tab-active {
+    @apply text-brass bg-brass-faint/50 border border-brass/15;
+  }
 }
 
 /* Leaflet popup overrides for dark theme */
@@ -122,4 +157,12 @@
   .stagger-8 { animation-delay: 0.4s; }
 
   .tabular { font-variant-numeric: tabular-nums; }
+
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .animate-slide-in-left {
+    animation: slide-in-left 200ms ease-out;
+  }
 }

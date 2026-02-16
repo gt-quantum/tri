@@ -111,7 +111,7 @@ export default function LeaseTimeline({ data }: { data: PortfolioData }) {
                 <div className="w-36 shrink-0">
                   {item.tenantId ? (
                     <Link
-                      href={`/tenant/${item.tenantId}`}
+                      href={`/tenants/${item.tenantId}`}
                       className="text-warm-white text-sm font-body font-medium truncate block group-hover:text-brass transition-colors"
                       title={item.tenant}
                     >
@@ -146,7 +146,7 @@ export default function LeaseTimeline({ data }: { data: PortfolioData }) {
                 <div className="w-44 shrink-0 text-right hidden md:block">
                   {item.propertyId ? (
                     <Link
-                      href={`/property/${item.propertyId}`}
+                      href={`/properties/${item.propertyId}`}
                       className="text-warm-200 text-xs font-body hover:text-brass transition-colors"
                     >
                       {item.property}

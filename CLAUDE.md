@@ -6,9 +6,10 @@
 - **API:** Next.js 15 (App Router) + TypeScript — Route Handlers at `/api/v1/`
 - **Validation:** Zod schemas (also powers OpenAPI 3.1 spec generation)
 - **Auth UI:** `@supabase/auth-ui-react` + `@supabase/ssr` for session management
+- **Icons:** Lucide React (tree-shakeable SVG icons)
 - **Legacy Dashboard:** React 18 + Vite + Tailwind 3 (in `dashboard-v1/`, being replaced)
 - **Charts:** Recharts (SVG-based, native React components)
-- **Map:** Leaflet + react-leaflet v4 (CartoDB dark matter tiles, no API key)
+- **Map:** Leaflet (vanilla, not react-leaflet) — CartoDB dark matter tiles, no API key
 - **Hosting:** Vercel (auto-deploys from `main` branch)
 - **Theme:** "Obsidian & Brass" dark theme (Tailwind config at root)
 
@@ -173,8 +174,6 @@ Every endpoint follows these patterns:
 - `/signup` — Same auth UI with invitation token support
 - `/onboarding` — Create organization form (authenticated, no org)
 - `/auth/callback` — OAuth redirect handler
-- `/settings/team` — Team management (users, invitations, roles)
-- `/settings/api-keys` — API key management (create, rotate, revoke; admin only)
 
 ### Error Format
 ```json
@@ -188,17 +187,55 @@ Every endpoint follows these patterns:
 }
 ```
 
-## Dashboard & Frontend Pages
+## Frontend — App Shell & Navigation
 
 **Framework:** Next.js 15 App Router (same project as API)
 **Data fetching:** Authenticated API calls via `useDashboardData()` hook (`lib/use-dashboard-data.ts`)
+**Auth context:** `AuthProvider` + `useAuth()` hook (`lib/auth-context.tsx`)
+**Portfolio context:** `usePortfolioContext()` hook (`lib/use-portfolio-context.ts`)
+
+### Route Groups
+```
+app/
+├── (auth)/                    ← No navigation shell (login, signup, onboarding)
+├── (app)/                     ← App shell: CommandRail + TopBar + content
+│   ├── page.tsx               ← Dashboard (/)
+│   ├── properties/[id]/       ← Property detail (/properties/[id])
+│   ├── tenants/[id]/          ← Tenant detail (/tenants/[id])
+│   ├── leases/                ← Leases placeholder (/leases)
+│   └── settings/              ← Settings with tab navigation
+│       ├── layout.tsx         ← Horizontal tab nav (role-filtered)
+│       ├── profile/           ← Everyone
+│       ├── security/          ← Everyone
+│       ├── organization/      ← Admin only
+│       ├── users/             ← Admin only (was /settings/team)
+│       ├── invitations/       ← Admin only
+│       ├── portfolios/        ← Manager+
+│       ├── custom-fields/     ← Manager+
+│       ├── picklists/         ← Manager+
+│       ├── api-keys/          ← Admin only
+│       ├── audit-log/         ← Admin only
+│       └── integrations/      ← Admin only
+├── auth/callback/             ← OAuth redirect handler
+└── api/v1/                    ← All API routes (unchanged)
+```
+
+### Navigation Components (`components/navigation/`)
+- `CommandRail.tsx` — Slim sidebar (60px collapsed, 240px on hover). TRI monogram, PortfolioSwitcher, nav items (Dashboard, Properties, Tenants, Leases, Settings), user avatar dropdown. Mobile: full-screen overlay via hamburger.
+- `TopBar.tsx` — 52px breadcrumb strip with portfolio context. Search pill placeholder (cmd+K). Exports `setBreadcrumbName(id, name)` for detail pages.
+- `PortfolioSwitcher.tsx` — Dropdown for portfolio selection. "All Portfolios" + portfolio list + "Manage Portfolios" link (admin/manager).
+
+### URL Redirects (backward compatibility)
+- `/property/:id` → `/properties/:id` (permanent)
+- `/tenant/:id` → `/tenants/:id` (permanent)
+- `/settings/team` → `/settings/users` (permanent)
 
 ### Pages
-- `/` — Main dashboard (Analytics / Data tabs, summary cards, navigation)
-- `/property/[id]` — Property detail (spaces, active leases, lease history)
-- `/tenant/[id]` — Tenant detail (parent/subsidiary, portfolio footprint, leases)
-- `/settings/team` — Team management (users, invitations, roles)
-- `/settings/api-keys` — API key management (admin only)
+- `/` — Main dashboard (Analytics / Data tabs, summary cards)
+- `/properties/[id]` — Property detail (spaces, active leases, lease history)
+- `/tenants/[id]` — Tenant detail (parent/subsidiary, portfolio footprint, leases)
+- `/leases` — Leases list (placeholder)
+- `/settings/*` — 11 settings pages (2 full, 9 placeholder)
 - `/login`, `/signup`, `/onboarding`, `/auth/callback` — Auth flow
 
 ### Dashboard Components (`components/dashboard/`)
@@ -213,9 +250,12 @@ Every endpoint follows these patterns:
 - `VacancyView.tsx` — Vacant spaces grouped by property
 
 ### Key Patterns
-- `useDashboardData()` — shared hook for auth + data fetching, used by all 3 main pages
+- `AuthProvider` wraps `(app)/layout.tsx` — provides user info to shell components without data fetching
+- `usePortfolioContext()` — manages portfolio selection via URL `?portfolio={id}` + localStorage
+- `useDashboardData()` — shared hook for data fetching, used by dashboard + detail pages
+- `setBreadcrumbName(id, name)` — detail pages set entity names for TopBar breadcrumbs
+- Mobile nav: DOM custom event `tri-mobile-nav-toggle` connects TopBar hamburger to CommandRail overlay
 - Leaflet requires `dynamic(() => import(...), { ssr: false })` for SSR safety
-- react-leaflet pinned to v4 (v5 requires React 19)
 - All data comes through `/api/v1/` routes (not direct Supabase queries)
 
 ## Legacy Dashboard (v1)

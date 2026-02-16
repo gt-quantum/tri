@@ -83,7 +83,7 @@ export default function PropertyMap({ data }: { data: PortfolioData }) {
   const handleClick = useCallback((e: MouseEvent) => {
     const target = (e.target as HTMLElement).closest('[data-property-id]') as HTMLElement | null
     if (target) {
-      router.push(`/property/${target.dataset.propertyId}`)
+      router.push(`/properties/${target.dataset.propertyId}`)
     }
   }, [router])
 

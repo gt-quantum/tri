@@ -24,7 +24,7 @@ interface InvitationRecord {
   invited_by_name: string | null
 }
 
-export default function TeamPage() {
+export default function UsersPage() {
   const router = useRouter()
   const [supabase] = useState(() => createSupabaseBrowserClient())
   const [loading, setLoading] = useState(true)
@@ -60,7 +60,6 @@ export default function TeamPage() {
         role: session.user.app_metadata?.role || 'viewer',
       })
 
-      // Fetch users and invitations in parallel
       const [usersRes, invitesRes] = await Promise.all([
         fetch('/api/v1/users?limit=100&include_deleted=true', { headers }),
         fetch('/api/v1/invitations', { headers }),
@@ -76,7 +75,7 @@ export default function TeamPage() {
         setInvitations(invitesData.data || [])
       }
     } catch {
-      // Silently fail — user sees empty state
+      // Silently fail
     } finally {
       setLoading(false)
     }
@@ -242,7 +241,7 @@ export default function TeamPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="text-warm-300 font-body text-sm">Loading team...</div>
       </div>
     )
@@ -250,43 +249,19 @@ export default function TeamPage() {
 
   const activeUsers = users.filter((u) => !u.deleted_at)
   const deactivatedUsers = users.filter((u) => u.deleted_at)
-  const pendingInvitations = invitations.filter(
-    (i) => i.status === 'pending'
-  )
-  const pastInvitations = invitations.filter(
-    (i) => i.status !== 'pending'
-  )
+  const pendingInvitations = invitations.filter((i) => i.status === 'pending')
+  const pastInvitations = invitations.filter((i) => i.status !== 'pending')
 
   return (
-    <div className="min-h-screen p-6 max-w-5xl mx-auto">
-      {/* Header */}
+    <div>
+      {/* Page header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <button
-              onClick={() => router.push('/')}
-              className="text-warm-300 hover:text-warm-white transition-colors text-sm font-body"
-            >
-              &larr; Dashboard
-            </button>
-          </div>
           <h1 className="font-display text-2xl text-warm-white tracking-wide">
-            Team Management
+            Users &amp; Roles
           </h1>
           <p className="font-body text-warm-300 text-sm mt-1">
-            {activeUsers.length} active member
-            {activeUsers.length !== 1 ? 's' : ''}
-            {isAdmin && (
-              <>
-                {' '}&middot;{' '}
-                <button
-                  onClick={() => router.push('/settings/api-keys')}
-                  className="text-brass/70 hover:text-brass transition-colors"
-                >
-                  Manage API Keys
-                </button>
-              </>
-            )}
+            {activeUsers.length} active member{activeUsers.length !== 1 ? 's' : ''}
           </p>
         </div>
         {isAdmin && (
@@ -329,16 +304,11 @@ export default function TeamPage() {
             </thead>
             <tbody>
               {activeUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-b border-obsidian-700/50 last:border-0"
-                >
+                <tr key={user.id} className="border-b border-obsidian-700/50 last:border-0">
                   <td className="table-cell text-warm-white">
-                    {user.full_name || '—'}
+                    {user.full_name || '\u2014'}
                     {user.id === currentUser?.id && (
-                      <span className="ml-2 text-[10px] text-brass font-semibold uppercase tracking-wider">
-                        You
-                      </span>
+                      <span className="ml-2 text-[10px] text-brass font-semibold uppercase tracking-wider">You</span>
                     )}
                   </td>
                   <td className="table-cell text-warm-200">{user.email}</td>
@@ -346,34 +316,25 @@ export default function TeamPage() {
                     {isAdmin && user.id !== currentUser?.id ? (
                       <select
                         value={user.role}
-                        onChange={(e) =>
-                          handleRoleChange(user.id, e.target.value)
-                        }
-                        className="bg-obsidian-800 border border-brass-faint rounded px-2 py-1 text-sm text-warm-white font-body
-                          focus:outline-none focus:border-brass/30"
+                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                        className="bg-obsidian-800 border border-brass-faint rounded px-2 py-1 text-sm text-warm-white font-body focus:outline-none focus:border-brass/30"
                       >
                         <option value="admin">Admin</option>
                         <option value="manager">Manager</option>
                         <option value="viewer">Viewer</option>
                       </select>
                     ) : (
-                      <span
-                        className={`badge ${
-                          user.role === 'admin'
-                            ? 'bg-brass/15 text-brass'
-                            : user.role === 'manager'
-                              ? 'bg-blue-500/15 text-blue-300'
-                              : 'bg-warm-500/30 text-warm-200'
-                        }`}
-                      >
+                      <span className={`badge ${
+                        user.role === 'admin' ? 'bg-brass/15 text-brass'
+                        : user.role === 'manager' ? 'bg-blue-500/15 text-blue-300'
+                        : 'bg-warm-500/30 text-warm-200'
+                      }`}>
                         {user.role}
                       </span>
                     )}
                   </td>
                   <td className="table-cell text-warm-300 text-sm">
-                    {user.last_login_at
-                      ? new Date(user.last_login_at).toLocaleDateString()
-                      : '—'}
+                    {user.last_login_at ? new Date(user.last_login_at).toLocaleDateString() : '\u2014'}
                   </td>
                   {isAdmin && (
                     <td className="table-cell">
@@ -391,10 +352,7 @@ export default function TeamPage() {
               ))}
               {activeUsers.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={isAdmin ? 5 : 4}
-                    className="table-cell text-warm-400 text-center py-8"
-                  >
+                  <td colSpan={isAdmin ? 5 : 4} className="table-cell text-warm-400 text-center py-8">
                     No active members
                   </td>
                 </tr>
@@ -421,45 +379,24 @@ export default function TeamPage() {
               </thead>
               <tbody>
                 {pendingInvitations.map((inv) => (
-                  <tr
-                    key={inv.id}
-                    className="border-b border-obsidian-700/50 last:border-0"
-                  >
+                  <tr key={inv.id} className="border-b border-obsidian-700/50 last:border-0">
                     <td className="table-cell text-warm-white">{inv.email}</td>
                     <td className="table-cell">
-                      <span
-                        className={`badge ${
-                          inv.role === 'admin'
-                            ? 'bg-brass/15 text-brass'
-                            : inv.role === 'manager'
-                              ? 'bg-blue-500/15 text-blue-300'
-                              : 'bg-warm-500/30 text-warm-200'
-                        }`}
-                      >
+                      <span className={`badge ${
+                        inv.role === 'admin' ? 'bg-brass/15 text-brass'
+                        : inv.role === 'manager' ? 'bg-blue-500/15 text-blue-300'
+                        : 'bg-warm-500/30 text-warm-200'
+                      }`}>
                         {inv.role}
                       </span>
                     </td>
-                    <td className="table-cell text-warm-300 text-sm">
-                      {new Date(inv.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="table-cell text-warm-300 text-sm">
-                      {new Date(inv.expires_at).toLocaleDateString()}
-                    </td>
+                    <td className="table-cell text-warm-300 text-sm">{new Date(inv.created_at).toLocaleDateString()}</td>
+                    <td className="table-cell text-warm-300 text-sm">{new Date(inv.expires_at).toLocaleDateString()}</td>
                     {isAdmin && (
                       <td className="table-cell">
                         <div className="flex gap-3">
-                          <button
-                            onClick={() => handleResend(inv.id)}
-                            className="text-brass/70 hover:text-brass text-sm font-body transition-colors"
-                          >
-                            Resend
-                          </button>
-                          <button
-                            onClick={() => handleRevoke(inv.id)}
-                            className="text-red-400/70 hover:text-red-300 text-sm font-body transition-colors"
-                          >
-                            Revoke
-                          </button>
+                          <button onClick={() => handleResend(inv.id)} className="text-brass/70 hover:text-brass text-sm font-body transition-colors">Resend</button>
+                          <button onClick={() => handleRevoke(inv.id)} className="text-red-400/70 hover:text-red-300 text-sm font-body transition-colors">Revoke</button>
                         </div>
                       </td>
                     )}
@@ -474,9 +411,7 @@ export default function TeamPage() {
       {/* Deactivated Users */}
       {deactivatedUsers.length > 0 && isAdmin && (
         <section className="mb-8">
-          <h2 className="section-heading mb-4 text-warm-300">
-            Deactivated Users
-          </h2>
+          <h2 className="section-heading mb-4 text-warm-300">Deactivated Users</h2>
           <div className="card-surface overflow-hidden opacity-70">
             <table className="w-full">
               <thead>
@@ -489,22 +424,12 @@ export default function TeamPage() {
               </thead>
               <tbody>
                 {deactivatedUsers.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="border-b border-obsidian-700/50 last:border-0"
-                  >
-                    <td className="table-cell text-warm-400">
-                      {user.full_name || '—'}
-                    </td>
+                  <tr key={user.id} className="border-b border-obsidian-700/50 last:border-0">
+                    <td className="table-cell text-warm-400">{user.full_name || '\u2014'}</td>
                     <td className="table-cell text-warm-400">{user.email}</td>
                     <td className="table-cell text-warm-400">{user.role}</td>
                     <td className="table-cell">
-                      <button
-                        onClick={() => handleReactivate(user.id)}
-                        className="text-emerald-400/70 hover:text-emerald-300 text-sm font-body transition-colors"
-                      >
-                        Reactivate
-                      </button>
+                      <button onClick={() => handleReactivate(user.id)} className="text-emerald-400/70 hover:text-emerald-300 text-sm font-body transition-colors">Reactivate</button>
                     </td>
                   </tr>
                 ))}
@@ -517,9 +442,7 @@ export default function TeamPage() {
       {/* Past Invitations */}
       {pastInvitations.length > 0 && (
         <section className="mb-8">
-          <h2 className="section-heading mb-4 text-warm-300">
-            Past Invitations
-          </h2>
+          <h2 className="section-heading mb-4 text-warm-300">Past Invitations</h2>
           <div className="card-surface overflow-hidden opacity-60">
             <table className="w-full">
               <thead>
@@ -532,28 +455,19 @@ export default function TeamPage() {
               </thead>
               <tbody>
                 {pastInvitations.map((inv) => (
-                  <tr
-                    key={inv.id}
-                    className="border-b border-obsidian-700/50 last:border-0"
-                  >
+                  <tr key={inv.id} className="border-b border-obsidian-700/50 last:border-0">
                     <td className="table-cell text-warm-400">{inv.email}</td>
                     <td className="table-cell text-warm-400">{inv.role}</td>
                     <td className="table-cell">
-                      <span
-                        className={`badge ${
-                          inv.status === 'accepted'
-                            ? 'bg-emerald-500/15 text-emerald-300'
-                            : inv.status === 'revoked'
-                              ? 'bg-red-500/15 text-red-300'
-                              : 'bg-warm-500/30 text-warm-400'
-                        }`}
-                      >
+                      <span className={`badge ${
+                        inv.status === 'accepted' ? 'bg-emerald-500/15 text-emerald-300'
+                        : inv.status === 'revoked' ? 'bg-red-500/15 text-red-300'
+                        : 'bg-warm-500/30 text-warm-400'
+                      }`}>
                         {inv.status}
                       </span>
                     </td>
-                    <td className="table-cell text-warm-400 text-sm">
-                      {new Date(inv.created_at).toLocaleDateString()}
-                    </td>
+                    <td className="table-cell text-warm-400 text-sm">{new Date(inv.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -566,9 +480,7 @@ export default function TeamPage() {
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian-950/80 backdrop-blur-sm">
           <div className="card-surface p-6 w-full max-w-sm mx-4">
-            <h3 className="font-display text-lg text-warm-white mb-4">
-              Invite Team Member
-            </h3>
+            <h3 className="font-display text-lg text-warm-white mb-4">Invite Team Member</h3>
 
             {inviteError && (
               <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-sm font-body">
@@ -578,9 +490,7 @@ export default function TeamPage() {
 
             <form onSubmit={handleInvite} className="space-y-4">
               <div>
-                <label className="block font-body text-sm text-warm-200 mb-1.5">
-                  Email address
-                </label>
+                <label className="block font-body text-sm text-warm-200 mb-1.5">Email address</label>
                 <input
                   type="email"
                   required
@@ -595,9 +505,7 @@ export default function TeamPage() {
               </div>
 
               <div>
-                <label className="block font-body text-sm text-warm-200 mb-1.5">
-                  Role
-                </label>
+                <label className="block font-body text-sm text-warm-200 mb-1.5">Role</label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
@@ -606,32 +514,24 @@ export default function TeamPage() {
                     focus:outline-none focus:border-brass/30 focus:ring-1 focus:ring-brass/20
                     transition-colors"
                 >
-                  <option value="viewer">Viewer — Read-only access</option>
-                  <option value="manager">
-                    Manager — Create and edit data
-                  </option>
-                  <option value="admin">Admin — Full access</option>
+                  <option value="viewer">Viewer -- Read-only access</option>
+                  <option value="manager">Manager -- Create and edit data</option>
+                  <option value="admin">Admin -- Full access</option>
                 </select>
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowInviteModal(false)
-                    setInviteError(null)
-                  }}
-                  className="flex-1 py-2.5 rounded-lg border border-brass-faint text-warm-200 font-body text-sm
-                    hover:border-brass/20 transition-colors"
+                  onClick={() => { setShowInviteModal(false); setInviteError(null) }}
+                  className="flex-1 py-2.5 rounded-lg border border-brass-faint text-warm-200 font-body text-sm hover:border-brass/20 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={inviteSubmitting}
-                  className="flex-1 py-2.5 rounded-lg bg-brass text-obsidian-950 font-body font-semibold text-sm
-                    hover:bg-brass-light transition-colors
-                    disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex-1 py-2.5 rounded-lg bg-brass text-obsidian-950 font-body font-semibold text-sm hover:bg-brass-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {inviteSubmitting ? 'Sending...' : 'Send Invitation'}
                 </button>

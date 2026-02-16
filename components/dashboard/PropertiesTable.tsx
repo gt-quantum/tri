@@ -103,7 +103,7 @@ export default function PropertiesTable({ data }: { data: PortfolioData }) {
                 >
                   <td className="table-cell">
                     <Link
-                      href={`/property/${row.id}`}
+                      href={`/properties/${row.id}`}
                       className="font-semibold text-warm-white group-hover:text-brass transition-colors"
                     >
                       {row.name}

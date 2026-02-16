@@ -83,7 +83,7 @@ export default function TenantOverview({ data }: { data: PortfolioData }) {
                     <div className="flex items-center gap-2">
                       {row.isChild && <span className="text-brass-dim ml-2 text-xs">└─</span>}
                       <Link
-                        href={`/tenant/${row.id}`}
+                        href={`/tenants/${row.id}`}
                         className={`font-semibold ${row.isChild ? 'text-warm-200' : 'text-warm-white'} group-hover:text-brass transition-colors`}
                       >
                         {row.company_name}
