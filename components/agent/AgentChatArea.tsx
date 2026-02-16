@@ -78,18 +78,19 @@ export default function AgentChatArea({ conversationId, onConversationCreated, o
         if (res.ok) {
           const body = await res.json()
           const msgs = body.data?.messages || []
+          // Load as text-only — tool invocation parts are session artifacts
+          // that cause API errors when re-sent to Anthropic
           setMessages(
-            msgs.map((m: { role: string; content?: string; parts?: Array<Record<string, unknown>> }, i: number) => {
-              // Preserve full parts array (including tool invocations) when available
-              if (Array.isArray(m.parts) && m.parts.length > 0) {
-                return {
-                  id: `loaded-${i}`,
-                  role: m.role as UIMessage['role'],
-                  parts: m.parts,
-                }
+            msgs.map((m: { role: string; content?: string; parts?: Array<{ type: string; text?: string }> }, i: number) => {
+              let text = ''
+              if (Array.isArray(m.parts)) {
+                text = m.parts
+                  .filter((p) => p.type === 'text' && p.text)
+                  .map((p) => p.text)
+                  .join('')
+              } else if (typeof m.content === 'string') {
+                text = m.content
               }
-              // Legacy format: plain content string → single text part
-              const text = typeof m.content === 'string' ? m.content : ''
               return {
                 id: `loaded-${i}`,
                 role: m.role as UIMessage['role'],

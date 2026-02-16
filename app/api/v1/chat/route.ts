@@ -99,33 +99,23 @@ export async function POST(request: NextRequest) {
             ? String(firstText).slice(0, 80)
             : 'New conversation'
 
-          // Build complete assistant message parts from steps (preserves tool invocations)
-          const assistantParts: Array<Record<string, unknown>> = []
-          for (const step of (steps || [])) {
-            if (step.toolCalls) {
-              for (const tc of step.toolCalls) {
-                const tr = step.toolResults?.find((r) => r.toolCallId === tc.toolCallId)
-                assistantParts.push({
-                  type: 'dynamic-tool',
-                  toolName: tc.toolName,
-                  toolCallId: tc.toolCallId,
-                  state: 'output-available',
-                  input: tc.input,
-                  output: tr?.output ?? null,
-                })
-              }
-            }
-            if (step.text) {
-              assistantParts.push({ type: 'text', text: step.text })
-            }
-          }
-          if (assistantParts.length === 0 && text) {
-            assistantParts.push({ type: 'text', text })
-          }
-
+          // Store all messages as text-only. Tool invocation parts are session
+          // artifacts — re-sending them causes Anthropic API tool_use/tool_result
+          // pairing errors. The text content is what matters for conversation context.
           const storedMessages = [
-            ...messages,
-            { role: 'assistant', parts: assistantParts },
+            ...messages.map((m: { role: string; parts?: Array<{ type: string; text?: string }>; content?: string }) => {
+              let msgText = ''
+              if (Array.isArray(m.parts)) {
+                msgText = m.parts
+                  .filter((p) => p.type === 'text' && p.text)
+                  .map((p) => p.text)
+                  .join('')
+              } else if (typeof m.content === 'string') {
+                msgText = m.content
+              }
+              return { role: m.role, content: msgText }
+            }),
+            { role: 'assistant', content: text },
           ]
 
           // Extract the last user message text for usage log

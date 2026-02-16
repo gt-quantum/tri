@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('ai_conversations')
-      .select('id, title, source, is_archived, created_at, updated_at, messages', { count: 'exact' })
+      .select('id, title, source, is_archived, created_at, updated_at', { count: 'exact' })
       .eq('org_id', auth.orgId)
       .eq('user_id', auth.userId)
       .order('updated_at', { ascending: false })
@@ -38,21 +38,7 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error
 
-    // Return summary (message count, not full messages)
-    const enriched = (data || []).map((row) => {
-      const messages = Array.isArray(row.messages) ? row.messages : []
-      return {
-        id: row.id,
-        title: row.title,
-        source: row.source,
-        is_archived: row.is_archived,
-        message_count: messages.length,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-      }
-    })
-
-    return listResponse(enriched, count ?? 0, params.limit, params.offset, requestId)
+    return listResponse(data || [], count ?? 0, params.limit, params.offset, requestId)
   } catch (err) {
     return errorResponse(err, requestId)
   }

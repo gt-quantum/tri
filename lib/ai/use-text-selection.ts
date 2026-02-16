@@ -44,7 +44,10 @@ export function useTextSelection() {
     })
   }, [])
 
-  const handleMouseDown = useCallback(() => {
+  const handleMouseDown = useCallback((e: MouseEvent) => {
+    // Don't clear selection when clicking inside the tooltip itself
+    const target = e.target as Element
+    if (target?.closest('[data-selection-tooltip]')) return
     setSelection(null)
   }, [])
 

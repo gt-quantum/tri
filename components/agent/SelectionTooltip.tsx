@@ -68,6 +68,7 @@ export default function SelectionTooltip() {
   return (
     <div
       className="fixed z-[60] animate-in fade-in"
+      data-selection-tooltip
       style={{
         top: position.top,
         left: position.left,

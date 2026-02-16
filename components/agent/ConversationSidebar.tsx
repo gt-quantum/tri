@@ -8,7 +8,6 @@ interface Conversation {
   id: string
   title: string
   source: string
-  message_count: number
   updated_at: string
 }
 
