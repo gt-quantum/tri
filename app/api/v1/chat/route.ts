@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
       ],
       tools: createTools(auth),
       stopWhen: stepCountIs(5),
-      onFinish: async ({ text }) => {
-        // Fire-and-forget: save conversation
+      onFinish: async ({ text, usage, steps }) => {
+        // Fire-and-forget: save conversation + log usage
         try {
           const firstUserMsg = messages.find((m: { role: string }) => m.role === 'user')
           // UIMessages have parts[], stored messages may have content
@@ -102,28 +102,56 @@ export async function POST(request: NextRequest) {
             { role: 'assistant', content: text },
           ]
 
-          if (conversationId) {
-            await supabase
-              .from('ai_conversations')
-              .update({
-                messages: storedMessages,
-                context: context || null,
-              })
-              .eq('id', conversationId)
-              .eq('org_id', auth.orgId)
-              .eq('user_id', auth.userId)
-          } else {
-            await supabase
-              .from('ai_conversations')
-              .insert({
-                org_id: auth.orgId,
-                user_id: auth.userId,
-                title,
-                messages: storedMessages,
-                context: context || null,
-                source: context?.page === '/agent' ? 'page' : 'widget',
-              })
-          }
+          // Extract the last user message text for usage log
+          const lastUserMsg = [...messages].reverse().find((m: { role: string }) => m.role === 'user')
+          const lastUserText = lastUserMsg?.parts?.find(
+            (p: { type: string }) => p.type === 'text'
+          )?.text || lastUserMsg?.content || ''
+
+          // Collect tool names from all steps
+          const toolsCalled = (steps || [])
+            .flatMap((s: { toolCalls?: { toolName: string }[] }) => s.toolCalls || [])
+            .map((tc: { toolName: string }) => tc.toolName)
+
+          const source = context?.page === '/agent' ? 'page' : 'widget'
+
+          // Save conversation and log usage in parallel
+          const saveConversation = conversationId
+            ? supabase
+                .from('ai_conversations')
+                .update({
+                  messages: storedMessages,
+                  context: context || null,
+                })
+                .eq('id', conversationId)
+                .eq('org_id', auth.orgId)
+                .eq('user_id', auth.userId)
+            : supabase
+                .from('ai_conversations')
+                .insert({
+                  org_id: auth.orgId,
+                  user_id: auth.userId,
+                  title,
+                  messages: storedMessages,
+                  context: context || null,
+                  source,
+                })
+
+          const logUsage = supabase
+            .from('ai_usage_log')
+            .insert({
+              org_id: auth.orgId,
+              user_id: auth.userId,
+              conversation_id: conversationId || null,
+              source,
+              user_message: String(lastUserText).slice(0, 500),
+              tools_called: toolsCalled,
+              token_input: usage?.inputTokens ?? null,
+              token_output: usage?.outputTokens ?? null,
+              duration_ms: null, // Could add timing later
+            })
+
+          await Promise.all([saveConversation, logUsage])
         } catch (err) {
           console.error('Failed to save conversation:', err)
         }

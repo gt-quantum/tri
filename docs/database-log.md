@@ -317,14 +317,44 @@ The leases list endpoint supports filtering by `status` and `lease_type`, but th
 
 ---
 
-## Current State Summary (as of 2026-02-15)
+---
 
-**Tables:** 15 (12 original + invitations + api_keys + ai_conversations)
-**Indexes:** 51 (48 previous + 3 ai_conversations indexes)
+## Migration 00011 — AI Usage Log
+
+**Date:** 2026-02-16
+**File:** `supabase/migrations/00011_ai_usage_log.sql`
+**Status:** Pending execution
+
+### Changes
+
+**New table: `ai_usage_log`**
+- Append-only analytics table — one row per Strata AI chat turn
+- Columns: id, org_id, user_id, conversation_id, source, user_message, tools_called (text[]), token_input, token_output, duration_ms, created_at
+- `conversation_id` has ON DELETE SET NULL (survives conversation deletion)
+- `user_message` capped at 500 chars (enough for analytics, not a full archive)
+- `tools_called` is a text array of tool names invoked during the turn
+
+**RLS:** Enabled with NO policies — only service_role can read/write. Invisible to end users.
+
+**Indexes (4):**
+- `idx_ai_usage_log_org_id` — filter by org
+- `idx_ai_usage_log_user_id` — filter by user
+- `idx_ai_usage_log_created_at` — time-series queries
+- `idx_ai_usage_log_org_created` — org + time composite for dashboard queries
+
+### Purpose
+Platform-owner analytics only. Not exposed via any API endpoint or frontend page. Query via Supabase SQL Editor or future back-office admin tool. Tracks: who uses Strata AI, how often, which tools, token costs.
+
+---
+
+## Current State Summary (as of 2026-02-16)
+
+**Tables:** 16 (12 original + invitations + api_keys + ai_conversations + ai_usage_log)
+**Indexes:** 55 (51 previous + 4 ai_usage_log indexes)
 **Unique constraints:** 5 (4 previous + api_keys key_hash unique)
-**RLS:** Enabled on all 15 data tables with org_id policies
+**RLS:** Enabled on all 16 tables; ai_usage_log has RLS enabled with no policies (service_role only)
 **System picklists:** 42 rows across 8 categories
 **Seed data:** Loaded — 1 org, 3 original users + 2 auth users, 1 portfolio, 10 properties, 79 spaces, 20 tenants, 70 leases, 10 audit entries
 **Triggers:** 9 (8 previous + 1 BEFORE UPDATE on ai_conversations)
 **Functions:** `public.user_org_id()` (updated for JWT claims), `public.set_updated_at()`, `public.handle_new_user()`
-**Schema changes:** 00010 adds ai_conversations table for Strata AI chat persistence
+**Schema changes:** 00011 adds ai_usage_log table for platform-owner analytics
