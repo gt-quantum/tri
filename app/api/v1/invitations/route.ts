@@ -64,14 +64,25 @@ export async function POST(request: NextRequest) {
       request.headers.get('x-change-source')
     )
 
-    // Check for existing active user with this email in the org
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
-      .eq('org_id', auth.orgId)
-      .eq('email', body.email)
-      .is('deleted_at', null)
-      .single()
+    // Check for existing user and pending invitation in parallel
+    const [{ data: existingUser }, { data: existingInvite }] = await Promise.all([
+      supabase
+        .from('users')
+        .select('id')
+        .eq('org_id', auth.orgId)
+        .eq('email', body.email)
+        .is('deleted_at', null)
+        .single(),
+      supabase
+        .from('invitations')
+        .select('id')
+        .eq('org_id', auth.orgId)
+        .eq('email', body.email)
+        .is('accepted_at', null)
+        .is('revoked_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .single(),
+    ])
 
     if (existingUser) {
       throw new ApiError(
@@ -80,17 +91,6 @@ export async function POST(request: NextRequest) {
         409
       )
     }
-
-    // Check for existing pending invitation
-    const { data: existingInvite } = await supabase
-      .from('invitations')
-      .select('id')
-      .eq('org_id', auth.orgId)
-      .eq('email', body.email)
-      .is('accepted_at', null)
-      .is('revoked_at', null)
-      .gt('expires_at', new Date().toISOString())
-      .single()
 
     if (existingInvite) {
       throw new ApiError(

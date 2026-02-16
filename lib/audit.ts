@@ -30,16 +30,17 @@ export function parseChangeSource(header: string | null): ChangeSource {
 
 /**
  * Write an audit log entry for a create action.
+ * Fire-and-forget: does not block the response.
  */
-export async function auditCreate(params: {
+export function auditCreate(params: {
   orgId: string
   entityType: string
   entityId: string
   newValues: Record<string, unknown>
   changedBy: string
   changeSource: ChangeSource
-}): Promise<void> {
-  await supabase.from('audit_log').insert({
+}): void {
+  supabase.from('audit_log').insert({
     org_id: params.orgId,
     entity_type: params.entityType,
     entity_id: params.entityId,
@@ -50,14 +51,17 @@ export async function auditCreate(params: {
     changed_by: params.changedBy,
     changed_at: new Date().toISOString(),
     change_source: params.changeSource,
+  }).then(({ error }) => {
+    if (error) console.error('Audit log (create) failed:', error.message)
   })
 }
 
 /**
  * Write audit log entries for an update action.
  * Creates one entry per changed field.
+ * Fire-and-forget: does not block the response.
  */
-export async function auditUpdate(params: {
+export function auditUpdate(params: {
   orgId: string
   entityType: string
   entityId: string
@@ -65,7 +69,7 @@ export async function auditUpdate(params: {
   newRecord: Record<string, unknown>
   changedBy: string
   changeSource: ChangeSource
-}): Promise<void> {
+}): void {
   const entries: Record<string, unknown>[] = []
 
   for (const key of Object.keys(params.newRecord)) {
@@ -92,21 +96,24 @@ export async function auditUpdate(params: {
   }
 
   if (entries.length > 0) {
-    await supabase.from('audit_log').insert(entries)
+    supabase.from('audit_log').insert(entries).then(({ error }) => {
+      if (error) console.error('Audit log (update) failed:', error.message)
+    })
   }
 }
 
 /**
  * Write an audit log entry for a soft-delete action.
+ * Fire-and-forget: does not block the response.
  */
-export async function auditSoftDelete(params: {
+export function auditSoftDelete(params: {
   orgId: string
   entityType: string
   entityId: string
   changedBy: string
   changeSource: ChangeSource
-}): Promise<void> {
-  await supabase.from('audit_log').insert({
+}): void {
+  supabase.from('audit_log').insert({
     org_id: params.orgId,
     entity_type: params.entityType,
     entity_id: params.entityId,
@@ -117,5 +124,7 @@ export async function auditSoftDelete(params: {
     changed_by: params.changedBy,
     changed_at: new Date().toISOString(),
     change_source: params.changeSource,
+  }).then(({ error }) => {
+    if (error) console.error('Audit log (soft_delete) failed:', error.message)
   })
 }

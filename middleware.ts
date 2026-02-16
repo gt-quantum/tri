@@ -8,9 +8,6 @@ const PUBLIC_ROUTES = [
   '/login',
   '/signup',
   '/auth/callback',
-  '/api/v1/health',
-  '/api/v1/docs',
-  '/api/v1/openapi.json',
 ]
 
 /**
@@ -19,6 +16,13 @@ const PUBLIC_ROUTES = [
 const PRE_ORG_ROUTES = ['/onboarding', '/api/v1/auth/create-org']
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Allow public routes through without any auth check
+  if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -46,24 +50,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
-  const { pathname } = request.nextUrl
-
-  // Allow public routes and static assets through
-  if (
-    PUBLIC_ROUTES.some((route) => pathname.startsWith(route)) ||
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon') ||
-    pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js)$/)
-  ) {
-    return supabaseResponse
-  }
-
-  // API routes handle their own auth via getAuthContext()
-  // (returns 401/403 instead of redirecting)
-  if (pathname.startsWith('/api/')) {
-    return supabaseResponse
-  }
 
   // No user → redirect to login
   if (!user) {
@@ -110,11 +96,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all routes except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico (favicon file)
+     * Match app routes that need session management.
+     * Excludes:
+     * - _next/static, _next/image (static assets)
+     * - favicon.ico and other static files
+     * - /api/ routes (handle their own auth via getAuthContext())
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/).*)',
   ],
 }

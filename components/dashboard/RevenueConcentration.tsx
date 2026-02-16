@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { PortfolioData } from '@/lib/use-dashboard-data'
 
@@ -38,7 +38,7 @@ function CustomTooltip({ active, payload }: any) {
   )
 }
 
-export default function RevenueConcentration({ data }: { data: PortfolioData }) {
+export default memo(function RevenueConcentration({ data }: { data: PortfolioData }) {
   const { leases, tenants } = data
 
   const { slices, metrics } = useMemo(() => {
@@ -177,4 +177,4 @@ export default function RevenueConcentration({ data }: { data: PortfolioData }) 
       </div>
     </div>
   )
-}
+})

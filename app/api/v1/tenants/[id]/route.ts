@@ -34,50 +34,29 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     if (error || !data) throw notFound('Tenant', id)
 
-    // Resolve parent tenant name
-    let parentTenantName: string | null = null
-    if (data.parent_tenant_id) {
-      const { data: parent } = await supabase
-        .from('tenants')
-        .select('company_name')
-        .eq('id', data.parent_tenant_id)
-        .eq('org_id', auth.orgId)
-        .single()
-      parentTenantName = parent?.company_name ?? null
-    }
-
-    // Resolve subsidiaries
-    const { data: subsidiaries } = await supabase
-      .from('tenants')
-      .select('id, company_name')
-      .eq('parent_tenant_id', id)
-      .eq('org_id', auth.orgId)
-      .is('deleted_at', null)
-
-    // Enrich leases with property_name and space_name
+    // Collect IDs for batch enrichment
     const leases = (data.leases as Record<string, unknown>[]) || []
     const propertyIds = [...new Set(leases.map((l) => l.property_id as string).filter(Boolean))]
     const spaceIds = [...new Set(leases.map((l) => l.space_id as string).filter(Boolean))]
 
-    let propertyMap: Record<string, string> = {}
-    if (propertyIds.length > 0) {
-      const { data: props } = await supabase
-        .from('properties')
-        .select('id, name')
-        .in('id', propertyIds)
-        .eq('org_id', auth.orgId)
-      propertyMap = Object.fromEntries((props || []).map((p) => [p.id, p.name]))
-    }
+    // Run all enrichment queries in parallel
+    const [parentResult, subsidiariesResult, propsResult, spacesResult] = await Promise.all([
+      data.parent_tenant_id
+        ? supabase.from('tenants').select('company_name').eq('id', data.parent_tenant_id).eq('org_id', auth.orgId).single()
+        : Promise.resolve({ data: null }),
+      supabase.from('tenants').select('id, company_name').eq('parent_tenant_id', id).eq('org_id', auth.orgId).is('deleted_at', null),
+      propertyIds.length > 0
+        ? supabase.from('properties').select('id, name').in('id', propertyIds).eq('org_id', auth.orgId)
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      spaceIds.length > 0
+        ? supabase.from('spaces').select('id, name').in('id', spaceIds).eq('org_id', auth.orgId)
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    ])
 
-    let spaceMap: Record<string, string> = {}
-    if (spaceIds.length > 0) {
-      const { data: spaces } = await supabase
-        .from('spaces')
-        .select('id, name')
-        .in('id', spaceIds)
-        .eq('org_id', auth.orgId)
-      spaceMap = Object.fromEntries((spaces || []).map((s) => [s.id, s.name]))
-    }
+    const parentTenantName = parentResult.data?.company_name ?? null
+    const subsidiaries = subsidiariesResult.data || []
+    const propertyMap: Record<string, string> = Object.fromEntries((propsResult.data || []).map((p) => [p.id, p.name]))
+    const spaceMap: Record<string, string> = Object.fromEntries((spacesResult.data || []).map((s) => [s.id, s.name]))
 
     const enrichedLeases = leases.map((lease) => ({
       ...lease,

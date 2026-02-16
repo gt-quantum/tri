@@ -539,6 +539,38 @@ Define a fixed 6-tier typography size scale and apply it uniformly across all 19
 
 ---
 
+## ADR-026: Performance Optimization — Fire-and-Forget Audit, Detail Hooks, Middleware Exclusion
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+A full system audit identified 10 performance issues in the v1 codebase. While none were critical bottlenecks, they represented compounding inefficiencies: every mutation blocked on audit log writes, detail pages fetched 500+ rows to display 1 entity, middleware ran a redundant auth check on every API request, and fonts loaded from external CDN.
+
+### Decision
+Implement a focused set of performance optimizations across the API layer, middleware, and frontend without changing external behavior or API contracts.
+
+### Key Design Choices
+
+**Fire-and-forget audit logging:** Changed `lib/audit.ts` functions from `async` returning `Promise<void>` to synchronous functions returning `void`. The Supabase insert still happens, but the API response doesn't wait for it. Errors are caught via `.then()` and logged to `console.error`. This is safe because: (a) audit log writes are non-critical — a failed log shouldn't fail the user's request, (b) the Supabase client handles its own connection management, and (c) all 32 callers used `await auditXxx()` which now resolves immediately on `undefined`.
+
+**`useEntityDetail()` over `useDashboardData()` for detail pages:** The dashboard hook fetches properties, spaces, tenants, leases, portfolios, and schema in parallel — appropriate for the dashboard which needs cross-entity calculations. Detail pages only need one entity. The new `useEntityDetail(endpoint, id)` hook makes a single API call to `GET /api/v1/{endpoint}/{id}` and uses the enriched response (which already includes `tenant_name`, `space_name`, `parent_tenant_name`, `subsidiaries`, etc.) instead of cross-referencing arrays client-side.
+
+**Middleware matcher exclusion for API routes:** Next.js middleware ran on every request including `/api/v1/` routes, creating a Supabase server client and calling `getUser()` before the route handler's own `getAuthContext()`. Adding `api/` to the matcher exclusion pattern eliminates this redundancy. API routes have their own comprehensive auth (API key, JWT, cookies) via `getAuthContext()`.
+
+**Self-hosted fonts via `next/font/google`:** Replaced the external Google Fonts `<link>` tag with Next.js's built-in font optimization. Fonts are downloaded at build time and served from the same domain, eliminating a render-blocking external request and removing a third-party dependency.
+
+**Dashboard portfolio filtering and caching:** Added `portfolioId` parameter to `useDashboardData()`. When a portfolio is selected, the properties endpoint receives `portfolio_id` for server-side filtering. Spaces and leases are filtered client-side by the returned property IDs (their endpoints don't support `portfolio_id`). A 60-second ref-based cache prevents redundant API calls when the component re-renders without parameter changes.
+
+**React.memo() on dashboard components:** All 8 chart/table components wrapped with `React.memo()`. The dashboard page has tab state and portfolio state that trigger re-renders, but the data prop doesn't change — memoization prevents recalculating charts on every state change.
+
+### Alternatives Considered
+- **Server-side audit queue (e.g., pg_notify, Bull):** Over-engineered for current scale. Fire-and-forget with error logging is sufficient.
+- **React Query / SWR for data fetching:** Would add a dependency for caching behavior that's adequately handled by a simple ref-based TTL. Worth revisiting if the app needs cache invalidation or optimistic updates.
+- **AbortController for stale request cancellation:** The fetch ID counter pattern (increment on each fetch, check on response) is simpler and handles the same race condition without AbortController's cleanup complexity.
+
+---
+
 ## ADR-024: Typography Convention — Playfair Display for KPI Values
 
 **Date:** 2026-02-15

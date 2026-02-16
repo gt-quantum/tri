@@ -3,15 +3,23 @@
 import { useMemo, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { useDashboardData } from '@/lib/use-dashboard-data'
+import { useEntityDetail } from '@/lib/hooks/use-entity-detail'
 import { setBreadcrumbName } from '@/components/navigation/TopBar'
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export default function TenantDetailPage() {
   const params = useParams()
   const id = params.id as string
-  const { data, loading } = useDashboardData()
+  const { data: tenant, loading, error } = useEntityDetail<any>('tenants', id)
 
-  if (loading || !data) {
+  useEffect(() => {
+    if (tenant) {
+      setBreadcrumbName(id, tenant.company_name)
+    }
+  }, [id, tenant])
+
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
@@ -20,51 +28,37 @@ export default function TenantDetailPage() {
     )
   }
 
-  return <TenantDetail id={id} data={data} />
+  if (error || !tenant) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="card-surface p-8 text-center max-w-md">
+          <h2 className="font-display text-lg text-warm-white mb-2">Tenant Not Found</h2>
+          <p className="text-warm-300 text-sm mb-4">{error || 'The requested tenant could not be found.'}</p>
+          <Link href="/tenants" className="text-brass hover:text-brass-light text-sm font-body transition-colors">
+            Back to Tenants
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  return <TenantDetail tenant={tenant} />
 }
 
-function TenantDetail({ id, data }: { id: string; data: any }) {
-  const { properties, spaces, tenants, leases } = data
+function TenantDetail({ tenant }: { tenant: any }) {
+  // API returns leases pre-enriched with property_name, space_name
+  // Also returns parent_tenant_name and subsidiaries
+  const allLeases = tenant.leases || []
+  const subsidiaries = tenant.subsidiaries || []
 
-  const tenant = tenants.find((t: any) => t.id === id)
-
-  // Set breadcrumb name for TopBar
-  useEffect(() => {
-    if (tenant) {
-      setBreadcrumbName(id, tenant.company_name)
-    }
-  }, [id, tenant])
-
-  const parentTenant = useMemo(() => {
-    if (!tenant?.parent_tenant_id) return null
-    return tenants.find((t: any) => t.id === tenant.parent_tenant_id)
-  }, [tenant, tenants])
-
-  const subsidiaries = useMemo(() => {
-    if (!tenant) return []
-    return tenants.filter((t: any) => t.parent_tenant_id === tenant.id)
-  }, [tenant, tenants])
-
-  const tenantLeases = useMemo(() => {
-    if (!tenant) return []
-    return leases.filter((l: any) => l.tenant_id === tenant.id)
-  }, [tenant, leases])
-
-  const activeLeases = useMemo(() => tenantLeases.filter((l: any) => l.status === 'active'), [tenantLeases])
-  const expiredLeases = useMemo(() => tenantLeases.filter((l: any) => l.status === 'expired'), [tenantLeases])
+  const activeLeases = useMemo(() => allLeases.filter((l: any) => l.status === 'active'), [allLeases])
+  const expiredLeases = useMemo(() => allLeases.filter((l: any) => l.status === 'expired'), [allLeases])
 
   const today = new Date()
   const sixMonthsOut = new Date(today)
   sixMonthsOut.setMonth(sixMonthsOut.getMonth() + 6)
 
   const propertyIds = useMemo(() => new Set(activeLeases.map((l: any) => l.property_id)), [activeLeases])
-  const totalSqft = useMemo(
-    () => activeLeases.reduce((sum: number, l: any) => {
-      const space = spaces.find((s: any) => s.id === l.space_id)
-      return sum + (space?.sqft || 0)
-    }, 0),
-    [activeLeases, spaces]
-  )
   const totalMonthlyRent = activeLeases.reduce((sum: number, l: any) => sum + (l.monthly_rent || 0), 0)
   const totalAnnualRent = activeLeases.reduce((sum: number, l: any) => sum + (l.annual_rent || 0), 0)
 
@@ -105,20 +99,6 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
     return new Date(endDateStr) <= sixMonthsOut && new Date(endDateStr) > today
   }
 
-  if (!tenant) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="card-surface p-8 text-center max-w-md">
-          <h2 className="font-display text-lg text-warm-white mb-2">Tenant Not Found</h2>
-          <p className="text-warm-300 text-sm mb-4">The requested tenant could not be found.</p>
-          <Link href="/" className="text-brass hover:text-brass-light text-sm font-body transition-colors">
-            Back to Dashboard
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   const credit = creditColors[tenant.credit_rating] || creditColors.not_rated
 
   return (
@@ -153,14 +133,14 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
       </header>
 
       {/* Parent/Subsidiary Info */}
-      {(parentTenant || subsidiaries.length > 0) && (
+      {(tenant.parent_tenant_name || subsidiaries.length > 0) && (
         <div className="mb-8 animate-fade-up stagger-1">
           <div className="card-surface p-5">
-            {parentTenant && (
+            {tenant.parent_tenant_name && (
               <div className="flex items-center gap-2 text-sm font-body">
                 <span className="text-warm-400">Subsidiary of</span>
-                <Link href={`/tenants/${parentTenant.id}`} className="text-brass hover:text-brass-light transition-colors font-medium">
-                  {parentTenant.company_name}
+                <Link href={`/tenants/${tenant.parent_tenant_id}`} className="text-brass hover:text-brass-light transition-colors font-medium">
+                  {tenant.parent_tenant_name}
                 </Link>
               </div>
             )}
@@ -181,7 +161,7 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
       )}
 
       {/* Portfolio Footprint */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-10 animate-fade-up stagger-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10 animate-fade-up stagger-2">
         <div className="card-surface-hover p-5">
           <div className="stat-label mb-3">Active Leases</div>
           <div className="text-2xl font-display text-warm-white tabular">{activeLeases.length}</div>
@@ -189,10 +169,6 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
         <div className="card-surface-hover p-5">
           <div className="stat-label mb-3">Properties</div>
           <div className="text-2xl font-display text-warm-white tabular">{propertyIds.size}</div>
-        </div>
-        <div className="card-surface-hover p-5">
-          <div className="stat-label mb-3">Total Sqft</div>
-          <div className="text-2xl font-display text-warm-white tabular">{totalSqft.toLocaleString()}</div>
         </div>
         <div className="card-surface-hover p-5">
           <div className="stat-label mb-3">Monthly Rent</div>
@@ -225,13 +201,11 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
               </thead>
               <tbody>
                 {activeLeases.map((lease: any) => {
-                  const prop = properties.find((p: any) => p.id === lease.property_id)
-                  const space = spaces.find((s: any) => s.id === lease.space_id)
                   const expiring = isExpiringSoon(lease.end_date)
                   return (
                     <tr key={lease.id} className={`border-b border-obsidian-700/50 last:border-0 hover:bg-brass-faint/50 transition-colors ${expiring ? 'bg-amber-400/[0.03]' : ''}`}>
-                      <td className="table-cell">{prop ? <Link href={`/properties/${prop.id}`} className="font-semibold text-warm-white hover:text-brass transition-colors">{prop.name}</Link> : <span className="text-warm-400">Unknown</span>}</td>
-                      <td className="table-cell text-warm-200">{space?.name || '\u2014'}</td>
+                      <td className="table-cell">{lease.property_name ? <Link href={`/properties/${lease.property_id}`} className="font-semibold text-warm-white hover:text-brass transition-colors">{lease.property_name}</Link> : <span className="text-warm-400">Unknown</span>}</td>
+                      <td className="table-cell text-warm-200">{lease.space_name || '\u2014'}</td>
                       <td className="table-cell"><span className="badge bg-obsidian-700 text-warm-200 border border-obsidian-600">{lease.lease_type}</span></td>
                       <td className="table-cell text-warm-200 tabular">{formatDate(lease.start_date)}</td>
                       <td className="table-cell tabular"><span className={expiring ? 'text-amber-400 font-medium' : 'text-warm-200'}>{formatDate(lease.end_date)}</span></td>
@@ -269,21 +243,17 @@ function TenantDetail({ id, data }: { id: string; data: any }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {expiredLeases.map((lease: any) => {
-                    const prop = properties.find((p: any) => p.id === lease.property_id)
-                    const space = spaces.find((s: any) => s.id === lease.space_id)
-                    return (
-                      <tr key={lease.id} className="border-b border-obsidian-700/50 last:border-0">
-                        <td className="table-cell">{prop ? <Link href={`/properties/${prop.id}`} className="text-warm-400 hover:text-brass transition-colors">{prop.name}</Link> : <span className="text-warm-500">Unknown</span>}</td>
-                        <td className="table-cell text-warm-400">{space?.name || '\u2014'}</td>
-                        <td className="table-cell"><span className="badge bg-obsidian-700/50 text-warm-400 border border-obsidian-600/50">{lease.lease_type}</span></td>
-                        <td className="table-cell text-warm-400 tabular">{formatDate(lease.start_date)}</td>
-                        <td className="table-cell text-warm-400 tabular">{formatDate(lease.end_date)}</td>
-                        <td className="table-cell text-right text-warm-400 tabular">{formatCurrency(lease.monthly_rent)}</td>
-                        <td className="table-cell text-right text-warm-400 tabular">{formatCurrency(lease.annual_rent)}</td>
-                      </tr>
-                    )
-                  })}
+                  {expiredLeases.map((lease: any) => (
+                    <tr key={lease.id} className="border-b border-obsidian-700/50 last:border-0">
+                      <td className="table-cell">{lease.property_name ? <Link href={`/properties/${lease.property_id}`} className="text-warm-400 hover:text-brass transition-colors">{lease.property_name}</Link> : <span className="text-warm-500">Unknown</span>}</td>
+                      <td className="table-cell text-warm-400">{lease.space_name || '\u2014'}</td>
+                      <td className="table-cell"><span className="badge bg-obsidian-700/50 text-warm-400 border border-obsidian-600/50">{lease.lease_type}</span></td>
+                      <td className="table-cell text-warm-400 tabular">{formatDate(lease.start_date)}</td>
+                      <td className="table-cell text-warm-400 tabular">{formatDate(lease.end_date)}</td>
+                      <td className="table-cell text-right text-warm-400 tabular">{formatCurrency(lease.monthly_rent)}</td>
+                      <td className="table-cell text-right text-warm-400 tabular">{formatCurrency(lease.annual_rent)}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

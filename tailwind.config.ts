@@ -8,8 +8,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        display: ['"Playfair Display"', 'Georgia', 'serif'],
-        body: ['"Outfit"', 'system-ui', 'sans-serif'],
+        display: ['var(--font-playfair)', '"Playfair Display"', 'Georgia', 'serif'],
+        body: ['var(--font-outfit)', '"Outfit"', 'system-ui', 'sans-serif'],
       },
       colors: {
         obsidian: {

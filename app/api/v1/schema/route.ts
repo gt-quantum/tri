@@ -177,7 +177,9 @@ export async function GET(request: NextRequest) {
       ],
     }
 
-    return successResponse(schema, requestId)
+    const response = successResponse(schema, requestId)
+    response.headers.set('Cache-Control', 'private, max-age=300')
+    return response
   } catch (err) {
     return errorResponse(err, requestId)
   }

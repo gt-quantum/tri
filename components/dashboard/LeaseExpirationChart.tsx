@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -83,7 +83,7 @@ function CustomTooltip({ active, payload, label }: any) {
   )
 }
 
-export default function LeaseExpirationChart({ data }: { data: PortfolioData }) {
+export default memo(function LeaseExpirationChart({ data }: { data: PortfolioData }) {
   const { leases, tenants, properties } = data
   const [scopePropertyId, setScopePropertyId] = useState('all')
 
@@ -202,4 +202,4 @@ export default function LeaseExpirationChart({ data }: { data: PortfolioData }) 
       </div>
     </div>
   )
-}
+})

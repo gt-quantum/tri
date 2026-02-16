@@ -1,10 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import Link from 'next/link'
 import { PortfolioData } from '@/lib/use-dashboard-data'
 
-export default function VacancyView({ data }: { data: PortfolioData }) {
+export default memo(function VacancyView({ data }: { data: PortfolioData }) {
   const { spaces, properties, leases, tenants } = data
 
   const vacantByProperty = useMemo(() => {
@@ -157,4 +157,4 @@ export default function VacancyView({ data }: { data: PortfolioData }) {
       </div>
     </div>
   )
-}
+})

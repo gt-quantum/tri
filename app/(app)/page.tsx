@@ -4,6 +4,7 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useDashboardData } from '@/lib/use-dashboard-data'
 import { useAuth } from '@/lib/auth-context'
+import { usePortfolioContext } from '@/lib/use-portfolio-context'
 import SummaryCards from '@/components/dashboard/SummaryCards'
 import LeaseExpirationChart from '@/components/dashboard/LeaseExpirationChart'
 import RevenueConcentration from '@/components/dashboard/RevenueConcentration'
@@ -25,7 +26,8 @@ const TABS = [
 ]
 
 export default function Home() {
-  const { data, loading, error } = useDashboardData()
+  const { portfolioId } = usePortfolioContext()
+  const { data, loading, error } = useDashboardData(portfolioId)
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('analytics')
 

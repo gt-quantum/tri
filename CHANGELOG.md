@@ -4,6 +4,68 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Performance Optimization Pass
+
+### Changed
+
+**API Layer**
+- **Fire-and-forget audit logging** (`lib/audit.ts`) — `auditCreate()`, `auditUpdate()`, and `auditSoftDelete()` no longer block the response. Writes happen asynchronously with error logging, saving 10-50ms per mutation across all 32 call sites.
+- **Parallelized sequential DB queries** — Four API routes now use `Promise.all()` for independent queries:
+  - `GET /api/v1/tenants/:id` — 4 enrichment queries (parent, subsidiaries, properties, spaces) run in parallel
+  - `POST /api/v1/leases` — 3 validation queries (tenant, property, space) run in parallel
+  - `PATCH /api/v1/leases/:id` — 3 validation queries run in parallel
+  - `POST /api/v1/invitations` — 2 conflict checks (existing user, existing invitation) run in parallel
+- **Cache-Control headers** on static/semi-static endpoints:
+  - `GET /api/v1/health` — `no-cache, no-store, must-revalidate`
+  - `GET /api/v1/openapi.json` — `public, max-age=86400` (24hr)
+  - `GET /api/v1/schema` — `private, max-age=300` (5min)
+
+**Middleware**
+- **Excluded API routes from Next.js middleware** (`middleware.ts`) — API routes now skip middleware entirely via matcher pattern, avoiding a redundant `supabase.auth.getUser()` call on every API request. API routes handle their own auth via `getAuthContext()`.
+- **Early return for public routes** — Login, signup, callback pages skip Supabase session check.
+
+**Frontend**
+- **Self-hosted fonts via `next/font/google`** (`app/layout.tsx`, `tailwind.config.ts`) — Playfair Display and Outfit are now self-hosted through Next.js font optimization instead of external Google Fonts `<link>` tags. Eliminates render-blocking external request and third-party dependency.
+- **Detail pages use single-entity API calls** — Property and tenant detail pages now fetch via `useEntityDetail()` hook (1 API call for 1 entity) instead of `useDashboardData()` (6 API calls fetching 500+ rows). Uses enriched API responses for tenant_name, space_name, parent_tenant_name, subsidiaries.
+- **Dashboard portfolio filtering** (`lib/use-dashboard-data.ts`) — Dashboard now passes `portfolio_id` to the properties endpoint when a portfolio is selected, and filters spaces/leases client-side by the returned property IDs. Includes a 60-second ref-based cache to skip redundant refetches.
+- **React.memo() on all dashboard components** — All 8 chart/table components wrapped with `React.memo()` to prevent unnecessary re-renders when parent state changes.
+
+**Database**
+- **Lease filter indexes** (migration `00009_lease_filter_indexes.sql`) — Composite indexes on `leases(org_id, status)` and `leases(org_id, lease_type)` for filtered list queries.
+
+### Added
+- `lib/hooks/use-entity-detail.ts` — Generic hook for fetching a single entity by ID via the REST API. Uses `useAuth().getToken()` for Bearer auth, includes stale request cancellation.
+- `supabase/migrations/00009_lease_filter_indexes.sql` — Two composite indexes for lease filtering.
+
+### Removed
+- `react-leaflet` package — was unused after the map was rewritten to use vanilla Leaflet in a previous phase. Saves ~50KB from the bundle.
+
+### Files Modified
+- `lib/audit.ts` — fire-and-forget pattern
+- `middleware.ts` — API route exclusion, public route early return
+- `app/layout.tsx` — next/font/google integration
+- `tailwind.config.ts` — CSS variable font references
+- `app/api/v1/health/route.ts` — Cache-Control header
+- `app/api/v1/openapi.json/route.ts` — Cache-Control header
+- `app/api/v1/schema/route.ts` — Cache-Control header
+- `app/api/v1/tenants/[id]/route.ts` — Promise.all() parallelization
+- `app/api/v1/leases/route.ts` — Promise.all() parallelization
+- `app/api/v1/leases/[id]/route.ts` — Promise.all() parallelization
+- `app/api/v1/invitations/route.ts` — Promise.all() parallelization
+- `app/(app)/properties/[id]/page.tsx` — rewritten with useEntityDetail
+- `app/(app)/tenants/[id]/page.tsx` — rewritten with useEntityDetail
+- `app/(app)/page.tsx` — portfolio context integration
+- `lib/use-dashboard-data.ts` — portfolio filtering + cache
+- 8 dashboard components — React.memo() wrapping
+
+### Design Decisions
+- **Fire-and-forget audit is safe here** because audit_log failures are non-critical — the API response should not fail because a log write failed. Errors are still captured via `console.error`.
+- **Detail page hook separation from dashboard hook** — Detail pages have fundamentally different data needs (1 enriched entity vs. all entities). Sharing `useDashboardData()` was a v1 shortcut that caused unnecessary over-fetching.
+- **Client-side portfolio filtering for spaces/leases** — The spaces and leases API endpoints don't support a `portfolio_id` filter. Rather than adding new API params, the dashboard filters client-side by property IDs from the portfolio-filtered properties response.
+- See ADR-026 for full rationale.
+
+---
+
 ## [2026-02-15] — Typography Scale: Increase Text Sizes & Contrast for Dark Mode
 
 ### Changed

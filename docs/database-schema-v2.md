@@ -326,6 +326,14 @@ Supports "show me all records created by this user" queries for activity feeds a
 | tenants | `created_by` | Records created by a specific user |
 | leases | `created_by` | Records created by a specific user |
 
+### Lease filtering
+Composite indexes for common list endpoint filters.
+
+| Table | Index | Purpose |
+|---|---|---|
+| leases | `org_id, status` | `GET /api/v1/leases?status=...` filtered queries |
+| leases | `org_id, lease_type` | `GET /api/v1/leases?lease_type=...` filtered queries |
+
 ### Soft deletes
 Filter out deleted records efficiently in normal queries.
 

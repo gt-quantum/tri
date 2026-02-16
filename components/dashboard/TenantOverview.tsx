@@ -1,10 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import Link from 'next/link'
 import { PortfolioData } from '@/lib/use-dashboard-data'
 
-export default function TenantOverview({ data }: { data: PortfolioData }) {
+export default memo(function TenantOverview({ data }: { data: PortfolioData }) {
   const { tenants, leases } = data
 
   const rows = useMemo(() => {
@@ -129,4 +129,4 @@ export default function TenantOverview({ data }: { data: PortfolioData }) {
       </div>
     </div>
   )
-}
+})

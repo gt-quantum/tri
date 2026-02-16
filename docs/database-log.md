@@ -272,10 +272,24 @@ Ensures `updated_at` is always accurate on every UPDATE, regardless of whether t
 
 ---
 
+## [2026-02-15] — Lease Filter Indexes
+
+**Migration:** `00009_lease_filter_indexes.sql`
+**Status:** Pending — run in Supabase SQL Editor
+
+### Indexes added (2):
+- `idx_leases_org_status` on leases(org_id, status) — for `GET /api/v1/leases?status=...`
+- `idx_leases_org_lease_type` on leases(org_id, lease_type) — for `GET /api/v1/leases?lease_type=...`
+
+### Purpose:
+The leases list endpoint supports filtering by `status` and `lease_type`, but these columns had no indexes. Without them, filtered queries require sequential scans as the leases table grows. Both use composite indexes with `org_id` to match the multi-tenancy query pattern.
+
+---
+
 ## Current State Summary (as of 2026-02-15)
 
 **Tables:** 14 (12 original + invitations + api_keys)
-**Indexes:** 46 (43 previous + 3 api_keys indexes)
+**Indexes:** 48 (46 previous + 2 lease filter indexes)
 **Unique constraints:** 5 (4 previous + api_keys key_hash unique)
 **RLS:** Enabled on all 14 data tables with org_id policies
 **System picklists:** 42 rows across 8 categories

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -70,7 +70,7 @@ function CustomTooltip({ active, payload, label }: any) {
   )
 }
 
-export default function RentRollProjection({ data }: { data: PortfolioData }) {
+export default memo(function RentRollProjection({ data }: { data: PortfolioData }) {
   const { leases } = data
 
   const chartData = useMemo(() => {
@@ -224,4 +224,4 @@ export default function RentRollProjection({ data }: { data: PortfolioData }) {
       </div>
     </div>
   )
-}
+})

@@ -1,8 +1,9 @@
 'use client'
 
+import { memo } from 'react'
 import { PortfolioData } from '@/lib/use-dashboard-data'
 
-export default function SummaryCards({ data }: { data: PortfolioData }) {
+export default memo(function SummaryCards({ data }: { data: PortfolioData }) {
   const { properties, spaces, leases } = data
 
   const totalProperties = properties.length
@@ -100,4 +101,4 @@ export default function SummaryCards({ data }: { data: PortfolioData }) {
       })}
     </div>
   )
-}
+})

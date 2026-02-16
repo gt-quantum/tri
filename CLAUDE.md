@@ -12,7 +12,7 @@
 - **Map:** Leaflet (vanilla, not react-leaflet) — CartoDB dark matter tiles, no API key
 - **Hosting:** Vercel (auto-deploys from `main` branch)
 - **Theme:** "Obsidian & Brass" dark theme (Tailwind config at root)
-- **Fonts:** Playfair Display (display/headings/stats) + Outfit (body/UI) — loaded via Google Fonts
+- **Fonts:** Playfair Display (display/headings/stats) + Outfit (body/UI) — self-hosted via `next/font/google`
 
 ## Summary
 Multi-tenant platform for real estate organizations — including REITs, property management companies, private owners, and commercial real estate firms — to manage portfolios, properties, spaces, tenants, and leases. Features customizable fields and picklist values per organization, a full audit log for historical change tracking, data import tracking, and a polymorphic scoring framework for risk/opportunity analysis.
@@ -56,11 +56,11 @@ tenants + spaces/properties → leases (many-to-many via leases)
 - `lib/api-keys.ts` — API key generation, hashing, and validation utilities
 - `lib/errors.ts` — Consistent error codes and response format
 - `lib/response.ts` — Standard response envelopes (single item, paginated list)
-- `lib/audit.ts` — Audit logging utilities (create, update, soft-delete)
+- `lib/audit.ts` — Audit logging utilities (create, update, soft-delete) — fire-and-forget, non-blocking
 - `lib/validation.ts` — Zod parsing helpers for body and query params
 - `lib/schemas/` — Zod schemas per entity (validation + OpenAPI generation)
 - `lib/openapi.ts` — OpenAPI 3.1 spec generator (Zod-to-OpenAPI registry, all routes registered)
-- `middleware.ts` — Next.js middleware for route protection (login redirect, onboarding redirect, session refresh)
+- `middleware.ts` — Next.js middleware for route protection (login redirect, onboarding redirect, session refresh). Excludes `/api/` routes via matcher — API routes handle their own auth.
 
 ### Authentication
 - **Three auth methods** in priority order:
@@ -191,7 +191,7 @@ Every endpoint follows these patterns:
 ## Frontend — App Shell & Navigation
 
 **Framework:** Next.js 15 App Router (same project as API)
-**Data fetching:** `useDashboardData()` for dashboard/detail pages (`lib/use-dashboard-data.ts`), `useApiList()` for list pages (`lib/hooks/use-api-list.ts`)
+**Data fetching:** `useDashboardData()` for dashboard (`lib/use-dashboard-data.ts`), `useEntityDetail()` for detail pages (`lib/hooks/use-entity-detail.ts`), `useApiList()` for list pages (`lib/hooks/use-api-list.ts`)
 **Auth context:** `AuthProvider` + `useAuth()` hook (`lib/auth-context.tsx`)
 **Portfolio context:** `usePortfolioContext()` hook (`lib/use-portfolio-context.ts`)
 
@@ -257,7 +257,8 @@ app/
 ### Key Patterns
 - `AuthProvider` wraps `(app)/layout.tsx` — provides user info to shell components without data fetching
 - `usePortfolioContext()` — manages portfolio selection via URL `?portfolio={id}` + localStorage
-- `useDashboardData()` — shared hook for data fetching, used by dashboard + detail pages
+- `useDashboardData(portfolioId?)` — dashboard data fetching with portfolio filtering and 60s cache. Used only by the main dashboard page.
+- `useEntityDetail(endpoint, id)` — fetches a single entity by ID via REST API. Used by property and tenant detail pages. Leverages enriched API responses (tenant_name, space_name, subsidiaries).
 - `useApiList()` — shared hook for paginated list pages (properties, tenants, leases). Uses `useAuth().getToken()` for Bearer auth, handles stale request cancellation, re-fetches when params change.
 - `setBreadcrumbName(id, name)` — detail pages set entity names for TopBar breadcrumbs
 - Mobile nav: DOM custom event `tri-mobile-nav-toggle` connects TopBar hamburger to CommandRail overlay
@@ -265,7 +266,7 @@ app/
 - All data comes through `/api/v1/` routes (not direct Supabase queries)
 
 ### Typography Convention
-Two font families loaded via Google Fonts in `app/layout.tsx`:
+Two font families self-hosted via `next/font/google` in `app/layout.tsx` (CSS variables `--font-playfair` and `--font-outfit`):
 - **`font-display`** — Playfair Display (serif). Traditional, authoritative feel for a financial/real estate platform.
 - **`font-body`** — Outfit (sans-serif). Clean, modern sans-serif for readability.
 

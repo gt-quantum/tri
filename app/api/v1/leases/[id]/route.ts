@@ -99,52 +99,35 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (refsChanged) {
       const errors: { field: string; message: string }[] = []
 
-      // Validate tenant if changed
-      if (body.tenant_id) {
-        const { data: tenant } = await supabase
-          .from('tenants')
-          .select('id')
-          .eq('id', body.tenant_id)
-          .eq('org_id', auth.orgId)
-          .is('deleted_at', null)
-          .single()
+      // Run all validation queries in parallel
+      const [tenantResult, propertyResult, spaceResult] = await Promise.all([
+        body.tenant_id
+          ? supabase.from('tenants').select('id').eq('id', body.tenant_id).eq('org_id', auth.orgId).is('deleted_at', null).single()
+          : Promise.resolve({ data: { id: existing.tenant_id } }),
+        body.property_id
+          ? supabase.from('properties').select('id').eq('id', body.property_id).eq('org_id', auth.orgId).is('deleted_at', null).single()
+          : Promise.resolve({ data: { id: existing.property_id } }),
+        effectiveSpaceId
+          ? supabase.from('spaces').select('id, property_id').eq('id', effectiveSpaceId).eq('org_id', auth.orgId).is('deleted_at', null).single()
+          : Promise.resolve({ data: null }),
+      ])
 
-        if (!tenant) {
-          errors.push({
-            field: 'tenant_id',
-            message: `Tenant '${body.tenant_id}' not found in your organization`,
-          })
-        }
+      if (body.tenant_id && !tenantResult.data) {
+        errors.push({
+          field: 'tenant_id',
+          message: `Tenant '${body.tenant_id}' not found in your organization`,
+        })
       }
 
-      // Validate property if changed
-      if (body.property_id) {
-        const { data: property } = await supabase
-          .from('properties')
-          .select('id')
-          .eq('id', body.property_id)
-          .eq('org_id', auth.orgId)
-          .is('deleted_at', null)
-          .single()
-
-        if (!property) {
-          errors.push({
-            field: 'property_id',
-            message: `Property '${body.property_id}' not found in your organization`,
-          })
-        }
+      if (body.property_id && !propertyResult.data) {
+        errors.push({
+          field: 'property_id',
+          message: `Property '${body.property_id}' not found in your organization`,
+        })
       }
 
-      // Validate space if set (not null) — must belong to the effective property
       if (effectiveSpaceId) {
-        const { data: space } = await supabase
-          .from('spaces')
-          .select('id, property_id')
-          .eq('id', effectiveSpaceId)
-          .eq('org_id', auth.orgId)
-          .is('deleted_at', null)
-          .single()
-
+        const space = spaceResult.data as { id: string; property_id: string } | null
         if (!space) {
           errors.push({
             field: 'space_id',

@@ -1,10 +1,10 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { PortfolioData } from '@/lib/use-dashboard-data'
 
-export default function LeaseTimeline({ data }: { data: PortfolioData }) {
+export default memo(function LeaseTimeline({ data }: { data: PortfolioData }) {
   const { leases, tenants, spaces, properties } = data
   const [filter, setFilter] = useState('all')
 
@@ -171,4 +171,4 @@ export default function LeaseTimeline({ data }: { data: PortfolioData }) {
       </div>
     </div>
   )
-}
+})

@@ -20,14 +20,18 @@ async function validateLeaseReferences(
 ): Promise<{ tenantName: string; propertyName: string; spaceName: string | null }> {
   const errors: { field: string; message: string }[] = []
 
-  // Validate tenant
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('id, company_name')
-    .eq('id', tenantId)
-    .eq('org_id', orgId)
-    .is('deleted_at', null)
-    .single()
+  // Run all validation queries in parallel
+  const [tenantResult, propertyResult, spaceResult] = await Promise.all([
+    supabase.from('tenants').select('id, company_name').eq('id', tenantId).eq('org_id', orgId).is('deleted_at', null).single(),
+    supabase.from('properties').select('id, name').eq('id', propertyId).eq('org_id', orgId).is('deleted_at', null).single(),
+    spaceId
+      ? supabase.from('spaces').select('id, name, property_id').eq('id', spaceId).eq('org_id', orgId).is('deleted_at', null).single()
+      : Promise.resolve({ data: null }),
+  ])
+
+  const tenant = tenantResult.data
+  const property = propertyResult.data
+  const space = spaceResult.data
 
   if (!tenant) {
     errors.push({
@@ -36,15 +40,6 @@ async function validateLeaseReferences(
     })
   }
 
-  // Validate property
-  const { data: property } = await supabase
-    .from('properties')
-    .select('id, name')
-    .eq('id', propertyId)
-    .eq('org_id', orgId)
-    .is('deleted_at', null)
-    .single()
-
   if (!property) {
     errors.push({
       field: 'property_id',
@@ -52,17 +47,8 @@ async function validateLeaseReferences(
     })
   }
 
-  // Validate space (if provided) — must belong to the referenced property
   let spaceName: string | null = null
   if (spaceId) {
-    const { data: space } = await supabase
-      .from('spaces')
-      .select('id, name, property_id')
-      .eq('id', spaceId)
-      .eq('org_id', orgId)
-      .is('deleted_at', null)
-      .single()
-
     if (!space) {
       errors.push({
         field: 'space_id',

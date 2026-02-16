@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { memo, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { PortfolioData } from '@/lib/use-dashboard-data'
 
-export default function PropertiesTable({ data }: { data: PortfolioData }) {
+export default memo(function PropertiesTable({ data }: { data: PortfolioData }) {
   const { properties, spaces, leases } = data
   const [sortKey, setSortKey] = useState('name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -155,4 +155,4 @@ export default function PropertiesTable({ data }: { data: PortfolioData }) {
       </div>
     </div>
   )
-}
+})
