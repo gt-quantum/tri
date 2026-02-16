@@ -16,6 +16,11 @@ export default function PortfolioSwitcher({ expanded }: PortfolioSwitcherProps) 
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
+  // Close dropdown when rail collapses
+  useEffect(() => {
+    if (!expanded) setOpen(false)
+  }, [expanded])
+
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
