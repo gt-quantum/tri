@@ -144,7 +144,10 @@ export default function TopBar() {
         {/* Right side */}
         <div className="hidden md:flex items-center gap-4">
           {/* Search pill (placeholder) */}
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-brass-faint text-warm-400 hover:text-warm-200 hover:border-brass/15 transition-colors">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('tri-search-open'))}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-brass-faint text-warm-400 hover:text-warm-200 hover:border-brass/15 transition-colors"
+          >
             <Search size={14} strokeWidth={1.5} />
             <span className="text-[13px] font-body hidden lg:inline">Search</span>
             <kbd className="hidden lg:inline text-[11px] font-body text-warm-400 bg-obsidian-800 px-1.5 py-0.5 rounded border border-brass-faint">

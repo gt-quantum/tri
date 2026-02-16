@@ -41,6 +41,9 @@ export async function GET(request: NextRequest) {
     if (params.state) {
       query = query.ilike('state', `%${params.state}%`)
     }
+    if (params.search) {
+      query = query.or(`name.ilike.%${params.search}%,city.ilike.%${params.search}%`)
+    }
 
     // Sorting
     query = query.order(params.sort, { ascending: params.order === 'asc' })

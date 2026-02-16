@@ -8,6 +8,7 @@ import CommandRail from '@/components/navigation/CommandRail'
 import TopBar from '@/components/navigation/TopBar'
 import AgentWidget from '@/components/agent/AgentWidget'
 import SelectionTooltip from '@/components/agent/SelectionTooltip'
+import SearchModal from '@/components/navigation/SearchModal'
 
 function AppShellInner({ children }: { children: React.ReactNode }) {
   const portfolio = usePortfolioProvider()
@@ -33,6 +34,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       </div>
       <AgentWidget />
       <SelectionTooltip />
+      <SearchModal />
     </PortfolioContext.Provider>
   )
 }

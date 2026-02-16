@@ -213,6 +213,22 @@
   .agent-markdown th, .agent-markdown td { border: 1px solid rgba(255,255,255,0.08); padding: 0.4em 0.6em; text-align: left; }
   .agent-markdown th { background: rgba(255,255,255,0.04); color: #ece8e0; font-weight: 600; }
 
+  /* Search modal enter animation */
+  .search-modal-enter {
+    animation: search-modal-enter 150ms ease-out;
+  }
+
+  @keyframes search-modal-enter {
+    0% {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
   @keyframes slide-in-left {
     from { transform: translateX(-100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }

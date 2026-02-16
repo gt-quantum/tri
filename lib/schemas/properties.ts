@@ -56,6 +56,7 @@ export const listPropertiesQuery = paginationSchema.extend({
   property_type: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
+  search: z.string().optional(),
   sort: z.enum(['name', 'city', 'created_at', 'current_value', 'total_sqft']).optional().default('name'),
   order: z.enum(['asc', 'desc']).optional().default('asc'),
   include_deleted: z.enum(['true', 'false']).optional().default('false'),
