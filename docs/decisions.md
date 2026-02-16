@@ -501,6 +501,44 @@ Create a shared `useApiList` hook (`lib/hooks/use-api-list.ts`) and three list p
 
 ---
 
+## ADR-025: Typography Scale — Minimum Text Sizes for Dark Mode Readability
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+After ADR-024 standardized font families, a readability review found that many text elements were slightly too small for the dark "Obsidian & Brass" theme. Subtitles, chart annotations, table headers, stat labels, and badges at 9–11px were difficult to read against the dark backgrounds, especially on lower-DPI displays. Warm-toned text colors at the `warm-400` level (mid-gray) compounded the issue.
+
+### Decision
+Define a fixed 6-tier typography size scale and apply it uniformly across all 19 affected files. Pair size increases with contrast improvements (warm-400 → warm-300) for small text.
+
+### Typography Size Scale
+| Tier | Size | Tailwind | Usage |
+|------|------|----------|-------|
+| Micro | 10px | `text-[10px]` | Inline badges (parent, subsidiary, role) |
+| Caption | 11px | `text-[11px]` | Stat labels, chart legends, kbd shortcuts |
+| Small | 12px | `text-xs` | Table headers, chart axes, filter buttons |
+| Subtitle | 13px | `text-[13px]` | Descriptions, secondary text, tooltips, pagination |
+| Body | 14px | `text-sm` | Body text, table cells, form inputs (unchanged) |
+| Heading | 24px | `text-2xl` | Page titles (unchanged) |
+
+### Key Design Choices
+
+**Fixed scale over percentage bumps:** A percentage increase (e.g., "make everything 10% bigger") would produce arbitrary sizes (9.9px, 11px, 13.2px). A fixed scale with intentional size tiers is more maintainable and produces consistent visual rhythm.
+
+**Contrast alongside size:** On dark backgrounds, small text suffers from both size and contrast. Bumping `text-warm-400` (muted gray) to `text-warm-300` (lighter warm gray) on subtitles, descriptions, and chart annotations improves legibility without changing the overall dark aesthetic.
+
+**Body text (14px) unchanged:** The primary body size was already comfortable. Only the smaller tiers (9–12px) needed adjustment. This keeps the overall density of the app similar while improving the hardest-to-read elements.
+
+**CSS utility classes as the source of truth:** `.stat-label`, `.table-header`, and `.badge` in `globals.css` define sizes once. Pages using these classes got the update automatically. Pages with inline sizes were updated to match the scale.
+
+### Alternatives Considered
+- **Larger base font (16px body):** Would increase all text but also increase page height and reduce information density. The current 14px body is standard for data-dense dashboards.
+- **Light mode alternative:** A light theme would solve contrast issues differently, but conflicts with the established "Obsidian & Brass" brand identity.
+- **Per-component adjustments:** Ad-hoc fixes per file would work short-term but without a defined scale, future pages would reintroduce inconsistency.
+
+---
+
 ## ADR-024: Typography Convention — Playfair Display for KPI Values
 
 **Date:** 2026-02-15

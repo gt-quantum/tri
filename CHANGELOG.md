@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Typography Scale: Increase Text Sizes & Contrast for Dark Mode
+
+### Changed
+- **Global text size bump** — Every text tier increased 1–2px for improved readability on dark backgrounds:
+  | Role | Old | New | Tailwind |
+  |------|-----|-----|----------|
+  | Micro badge | 9px | 10px | `text-[10px]` |
+  | Caption/label | 10px | 11px | `text-[11px]` |
+  | Table header | 11px | 12px | `text-xs` |
+  | Subtitle/description | 12px | 13px | `text-[13px]` |
+  | Body text | 14px | 14px | `text-sm` (unchanged) |
+  | Chart axes/ticks | 10px | 12px | `fontSize: 12` |
+- **Dark mode contrast improvement** — Small text bumped from `text-warm-400` to `text-warm-300` (and `warm-500` to `warm-400`) across subtitles, descriptions, labels, and chart annotations
+- **CSS utility classes updated** in `globals.css`:
+  - `.stat-label` — 10px → 11px, warm-400 → warm-300
+  - `.table-header` — 11px → 12px (text-xs), warm-300 → warm-200
+  - `.badge` — 10px → 11px
+- **19 files updated** across charts, dashboard components, pages, navigation, and settings
+
+### Files Modified
+- `globals.css` — global utility classes
+- 4 chart components: LeaseExpirationChart, RentRollProjection, RevenueConcentration, PropertyMap (Leaflet popup inline styles)
+- 4 dashboard components: SummaryCards, TenantOverview, VacancyView, LeaseTimeline
+- 4 pages: dashboard, properties list, tenants list, leases list
+- 2 detail pages: properties/[id], tenants/[id]
+- 3 navigation: TopBar, CommandRail, PortfolioSwitcher
+- 2 settings: users, api-keys
+
+### Design Decisions
+- **Systematic scale, not ad-hoc:** Defined a fixed 6-tier size scale (10/11/12/13/14/24px) and applied it uniformly. Future pages follow the scale documented in CLAUDE.md.
+- **Contrast paired with size:** Small text on dark backgrounds needs both larger size and brighter color. Bumped warm-400 → warm-300 alongside size increases.
+- **Body text unchanged:** 14px (`text-sm`) was already comfortable — only smaller tiers needed adjustment.
+- See ADR-025 for full rationale.
+
+---
+
 ## [2026-02-15] — Typography Consistency: Standardize Fonts Across All Pages
 
 ### Fixed
