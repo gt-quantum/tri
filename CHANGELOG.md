@@ -27,6 +27,9 @@ All notable changes to this project will be documented in this file.
 - **Text selection tooltip** — Select text/numbers on any page, tooltip appears with "Ask Strata AI". Click opens widget with selected text as context.
 - **`data-ai-context` attributes** — Dashboard stat cards, table rows, and detail fields provide structured context (entity type, field name, metric) for richer agent responses.
 
+**Platform Analytics**
+- **`ai_usage_log` table** (migration 00011) — Append-only usage tracking: org, user, message, tools called, token usage. RLS with no policies (service_role only). Not exposed to end users.
+
 ### Changed
 - **`lib/audit.ts`** — Added `'agent'` to `ChangeSource` type and `VALID_SOURCES` set.
 - **`app/(app)/layout.tsx`** — Mounts AgentWidget + SelectionTooltip. Conditional full-width layout for `/agent` page.

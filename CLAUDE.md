@@ -29,11 +29,12 @@ Multi-tenant platform for real estate organizations — including REITs, propert
 - Full schema documentation: `docs/database-schema-v2.md`
 - **Database change log: `docs/database-log.md`** — Every DB change is tracked here. Always update this file after any migration or DB modification.
 
-## Tables (14)
+## Tables (16)
 **Core Entities:** organizations, users, portfolios, properties, spaces, tenants, leases
 **Auth:** invitations, api_keys
 **Configuration:** picklist_definitions, custom_field_definitions
 **Tracking:** audit_log, data_imports, scores
+**AI:** ai_conversations, ai_usage_log
 
 ## Entity Hierarchy
 ```
@@ -363,6 +364,12 @@ listProperties, getProperty, listTenants, getTenant, listLeases, getLease, listS
 - **Table:** `ai_conversations` (migration 00010) — messages stored as jsonb array
 - **Endpoints:** `GET/POST /api/v1/conversations`, `GET/PATCH/DELETE /api/v1/conversations/:id`
 - **Auto-save:** `onFinish` callback in chat route (fire-and-forget)
+
+### Usage Analytics (platform-owner only)
+- **Table:** `ai_usage_log` (migration 00011) — append-only, one row per chat turn
+- **Tracked:** org_id, user_id, conversation_id, source, user_message (500 chars), tools_called (text[]), token_input, token_output, duration_ms
+- **RLS:** Enabled with no policies — only service_role can access. Invisible to end users.
+- **Purpose:** Future back-office analytics dashboard. Query via Supabase SQL Editor for now.
 
 ### Key Patterns
 - AI SDK v6: `useChat()` returns `messages`, `sendMessage`, `status`, `stop` — no `input`/`setInput` (managed locally)
