@@ -1,5 +1,6 @@
 'use client'
 
+import { useSyncExternalStore } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronRight, Search, Menu } from 'lucide-react'
@@ -7,16 +8,36 @@ import { useAuth } from '@/lib/auth-context'
 import { usePortfolioContext } from '@/lib/use-portfolio-context'
 import { triggerMobileNav } from './CommandRail'
 
-// Map for resolving entity names in breadcrumbs (property/tenant detail pages)
-// These are populated by the page components via the global breadcrumb name store
+// Reactive breadcrumb name store — detail pages set names, TopBar subscribes
 let breadcrumbNameStore: Record<string, string> = {}
+let listeners: Array<() => void> = []
+
+function emitChange() {
+  for (const listener of listeners) {
+    listener()
+  }
+}
 
 export function setBreadcrumbName(key: string, name: string) {
-  breadcrumbNameStore[key] = name
+  if (breadcrumbNameStore[key] === name) return
+  breadcrumbNameStore = { ...breadcrumbNameStore, [key]: name }
+  emitChange()
 }
 
 export function clearBreadcrumbNames() {
   breadcrumbNameStore = {}
+  emitChange()
+}
+
+function subscribeToBreadcrumbs(callback: () => void) {
+  listeners.push(callback)
+  return () => {
+    listeners = listeners.filter(l => l !== callback)
+  }
+}
+
+function getBreadcrumbSnapshot() {
+  return breadcrumbNameStore
 }
 
 const segmentLabels: Record<string, string> = {
@@ -41,6 +62,7 @@ export default function TopBar() {
   const pathname = usePathname()
   const { user } = useAuth()
   const { portfolioId, portfolioName } = usePortfolioContext()
+  const nameStore = useSyncExternalStore(subscribeToBreadcrumbs, getBreadcrumbSnapshot, getBreadcrumbSnapshot)
 
   const isSettings = pathname.startsWith('/settings')
   const segments = pathname.split('/').filter(Boolean)
@@ -66,7 +88,7 @@ export default function TopBar() {
 
       if (isUuid) {
         // Use stored entity name or truncated ID
-        const name = breadcrumbNameStore[seg] || `${seg.slice(0, 8)}...`
+        const name = nameStore[seg] || `${seg.slice(0, 8)}...`
         crumbs.push({
           label: name,
           href: i === segments.length - 1 ? null : path,
