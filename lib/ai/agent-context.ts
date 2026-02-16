@@ -9,6 +9,7 @@ export interface PageContext {
   entityType?: string
   entityId?: string
   selectedText?: string
+  aiContext?: Record<string, unknown>
 }
 
 /**

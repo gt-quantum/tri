@@ -45,6 +45,7 @@ export default function AgentWidget() {
   const { getToken } = useAuth()
   const [visualState, setVisualState] = useState<VisualState>('closed')
   const [selectedText, setSelectedText] = useState<string | undefined>()
+  const [aiContext, setAiContext] = useState<Record<string, unknown> | undefined>()
   const [widgetView, setWidgetView] = useState<WidgetView>('chat')
   const [conversationId, setConversationIdState] = useState<string | null>(null)
   const [conversations, setConversations] = useState<WidgetConversation[]>([])
@@ -61,6 +62,7 @@ export default function AgentWidget() {
   // Build page context
   const context = parsePageContext(pathname, portfolioId)
   if (selectedText) context.selectedText = selectedText
+  if (aiContext) context.aiContext = aiContext
 
   const {
     messages,
@@ -114,12 +116,19 @@ export default function AgentWidget() {
       if (res.ok) {
         const body = await res.json()
         const msgs = body.data?.messages || []
+        // Load as text-only — tool invocation parts are session artifacts
+        // that cause API errors when re-sent to Anthropic
         setMessages(
-          msgs.map((m: { role: string; content?: string; parts?: Array<Record<string, unknown>> }, i: number) => {
-            if (Array.isArray(m.parts) && m.parts.length > 0) {
-              return { id: `loaded-${i}`, role: m.role as UIMessage['role'], parts: m.parts }
+          msgs.map((m: { role: string; content?: string; parts?: Array<{ type: string; text?: string }> }, i: number) => {
+            let text = ''
+            if (Array.isArray(m.parts)) {
+              text = m.parts
+                .filter((p) => p.type === 'text' && p.text)
+                .map((p) => p.text)
+                .join('')
+            } else if (typeof m.content === 'string') {
+              text = m.content
             }
-            const text = typeof m.content === 'string' ? m.content : ''
             return { id: `loaded-${i}`, role: m.role as UIMessage['role'], parts: [{ type: 'text' as const, text }] }
           })
         )
@@ -168,6 +177,7 @@ export default function AgentWidget() {
     setMessages([])
     setWidgetView('chat')
     setSelectedText(undefined)
+    setAiContext(undefined)
     setInput('')
   }, [setConversationId, setMessages, setInput])
 
@@ -220,14 +230,21 @@ export default function AgentWidget() {
     function handleAsk(e: Event) {
       const detail = (e as CustomEvent).detail
       if (detail?.selectedText) {
+        // Start a fresh conversation for this highlight
+        setConversationIdState(null)
+        setConversationId(null)
+        setMessages([])
         setSelectedText(detail.selectedText)
+        setAiContext(detail.aiContext || undefined)
         setWidgetView('chat')
+        // Pre-fill input with the selected text so user can add their question
+        setInput(`"${detail.selectedText}" `)
         if (visualState === 'closed') handleOpen()
       }
     }
     window.addEventListener('tri-agent-ask', handleAsk)
     return () => window.removeEventListener('tri-agent-ask', handleAsk)
-  }, [visualState, handleOpen])
+  }, [visualState, handleOpen, setConversationId, setMessages, setInput])
 
   const handleSend = useCallback(async () => {
     if (!input.trim()) return
@@ -236,6 +253,7 @@ export default function AgentWidget() {
     await ensureConversation(text)
     await sendMessage(text)
     setSelectedText(undefined)
+    setAiContext(undefined)
   }, [input, setInput, sendMessage, ensureConversation])
 
   if (isAgentPage) return null

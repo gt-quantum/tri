@@ -134,6 +134,7 @@ export async function buildSystemPrompt(
     entityType?: string
     entityId?: string
     selectedText?: string
+    aiContext?: Record<string, unknown>
   }
 ): Promise<{ cached: string; dynamic: string }> {
   const schema = await getSchemaContext(auth.orgId)
@@ -179,7 +180,16 @@ The picklist values above are the valid options for dropdown fields. When filter
     }
     if (context.selectedText) {
       parts.push(`- User selected this text on the page: "${context.selectedText}"`)
-      parts.push(`- The user is asking about this specific value/text. Use context to determine what it refers to.`)
+      if (context.aiContext) {
+        parts.push(`- Element context: ${JSON.stringify(context.aiContext)}`)
+        // Provide human-readable hints based on context type
+        if (context.aiContext.type === 'kpi' && context.aiContext.metric) {
+          parts.push(`- This is a KPI metric: ${String(context.aiContext.metric).replace(/_/g, ' ')}`)
+        } else if (context.aiContext.type === 'entity' && context.aiContext.entity) {
+          parts.push(`- This is from a ${context.aiContext.entity} named "${context.aiContext.name}" (ID: ${context.aiContext.id})`)
+        }
+      }
+      parts.push(`- The user is asking about this specific value/text. Use the element context and page context to explain what it means, how it was calculated, and provide relevant details.`)
     }
   }
 
