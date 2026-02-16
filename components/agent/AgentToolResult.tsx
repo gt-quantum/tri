@@ -24,13 +24,21 @@ const TOOL_LABELS: Record<string, string> = {
 }
 
 function AgentToolResultComponent({ toolName, state, result }: AgentToolResultProps) {
-  const label = TOOL_LABELS[toolName] || toolName
+  const label = TOOL_LABELS[toolName] || toolName || 'Processing'
 
   if (state === 'call' || state === 'partial-call' || state === 'input-available' || state === 'input-streaming') {
     return (
       <div className="flex items-center gap-2 py-1">
         <Loader2 size={12} className="text-warm-400 animate-spin flex-shrink-0" />
         <span className="text-[13px] font-body text-warm-400">{label}...</span>
+      </div>
+    )
+  }
+
+  if (state === 'output-error') {
+    return (
+      <div className="flex items-center gap-2 py-1">
+        <span className="text-[13px] font-body text-red-400">Tool error: {label}</span>
       </div>
     )
   }

@@ -19,12 +19,19 @@ interface UseAgentChatOptions {
  * AI SDK v6's useChat() does NOT return input/setInput — we manage that locally
  * and expose a simplified sendMessage(text) that wraps the SDK's { text } signature.
  *
- * AI SDK v6 uses transport objects instead of api/headers/body options.
+ * We deliberately do NOT pass `id` to useChat — using a single stable message store
+ * and swapping messages via setMessages when switching conversations. This avoids
+ * the cross-contamination issues with useChat's id-based internal store.
+ *
+ * conversationId is tracked via a ref so the transport body() always reads the
+ * latest value without needing to recreate the transport instance.
  */
 export function useAgentChat(options: UseAgentChatOptions = {}) {
   const { getToken } = useAuth()
   const contextRef = useRef(options.context)
   contextRef.current = options.context ?? null
+  const conversationIdRef = useRef(options.conversationId ?? null)
+  conversationIdRef.current = options.conversationId ?? null
   const [input, setInput] = useState('')
 
   const transport = useMemo(
@@ -36,21 +43,25 @@ export function useAgentChat(options: UseAgentChatOptions = {}) {
           return token ? { Authorization: `Bearer ${token}` } : {}
         },
         body: () => ({
-          conversationId: options.conversationId ?? undefined,
+          conversationId: conversationIdRef.current ?? undefined,
           context: contextRef.current ?? undefined,
         }),
       }),
-    [getToken, options.conversationId]
+    [getToken]
   )
 
   const chat = useChat({
-    id: options.conversationId ?? undefined,
     transport,
     onError: (error) => {
       console.error('[Strata AI] Chat error:', error)
       options.onError?.(error)
     },
   })
+
+  // Allow imperative update of conversationId ref (before sendMessage, before React re-renders)
+  const setConversationId = useCallback((id: string | null) => {
+    conversationIdRef.current = id
+  }, [])
 
   // Wrap sendMessage to accept a plain string
   const sendMessageText = useCallback(
@@ -69,5 +80,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}) {
     input,
     setInput,
     sendMessage: sendMessageText,
+    setConversationId,
   }
 }

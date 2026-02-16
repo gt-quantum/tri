@@ -114,7 +114,7 @@ const listPropertiesParams = zodToParams(z.object({
   property_type: z.string().optional().describe('Filter by type: office, retail, industrial, residential, mixed_use'),
   city: z.string().optional().describe('Filter by city (partial match)'),
   state: z.string().optional().describe('Filter by state (partial match)'),
-  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 25)'),
+  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 10)'),
 }))
 
 const idParams = zodToParams(z.object({
@@ -125,7 +125,7 @@ const listTenantsParams = zodToParams(z.object({
   industry: z.string().optional().describe('Filter by industry'),
   credit_rating: z.string().optional().describe('Filter by credit rating: excellent, good, fair, poor, not_rated'),
   search: z.string().optional().describe('Search by company name (partial match)'),
-  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 25)'),
+  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 10)'),
 }))
 
 const listLeasesParams = zodToParams(z.object({
@@ -133,18 +133,18 @@ const listLeasesParams = zodToParams(z.object({
   property_id: z.string().uuid().optional().describe('Filter by property ID'),
   status: z.string().optional().describe('Filter by status: active, expired, pending, under_negotiation, month_to_month, terminated'),
   lease_type: z.string().optional().describe('Filter by type: nnn, gross, modified_gross, percentage'),
-  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 25)'),
+  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 10)'),
 }))
 
 const listSpacesParams = zodToParams(z.object({
   property_id: z.string().uuid().optional().describe('Filter by property ID'),
   status: z.string().optional().describe('Filter by status: occupied, vacant, under_renovation, not_available'),
   space_type: z.string().optional().describe('Filter by type: office, retail, warehouse, storage, common_area'),
-  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 50)'),
+  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 15)'),
 }))
 
 const listPortfoliosParams = zodToParams(z.object({
-  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 25)'),
+  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 10)'),
 }))
 
 const auditLogParams = zodToParams(z.object({
@@ -153,7 +153,7 @@ const auditLogParams = zodToParams(z.object({
   action: z.string().optional().describe('Filter by action: create, update, soft_delete, restore'),
   since: z.string().optional().describe('Filter changes after this ISO date'),
   until: z.string().optional().describe('Filter changes before this ISO date'),
-  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 25)'),
+  limit: z.number().int().min(1).max(100).optional().describe('Max results (default 10)'),
 }))
 
 const emptyParams = jsonSchema({ type: 'object', properties: {} })
@@ -167,9 +167,9 @@ export function createTools(auth: AuthContext) {
   return {
     listProperties: tool({
       description: 'List properties with optional filters. Returns name, address, type, sqft, value, and portfolio.',
-      parameters: listPropertiesParams,
+      inputSchema: listPropertiesParams,
       execute: async (params: z.infer<typeof listPropertiesSchema>) => {
-        const limit = params.limit ?? 25
+        const limit = params.limit ?? 10
         let query = supabase
           .from('properties')
           .select('id, name, address, city, state, zip, property_type, total_sqft, current_value, portfolio_id, portfolios!inner(name)', { count: 'exact' })
@@ -198,11 +198,11 @@ export function createTools(auth: AuthContext) {
 
     getProperty: tool({
       description: 'Get detailed info about a specific property including its spaces and active leases.',
-      parameters: idParams,
+      inputSchema: idParams,
       execute: async (params: z.infer<typeof idSchema>) => {
         const { data: property, error } = await supabase
           .from('properties')
-          .select('*, portfolios!inner(name)')
+          .select('id, portfolio_id, name, address, city, state, zip, lat, lng, property_type, total_sqft, year_built, acquisition_date, acquisition_price, current_value, portfolios!inner(name)')
           .eq('id', params.id)
           .eq('org_id', auth.orgId)
           .is('deleted_at', null)
@@ -246,9 +246,9 @@ export function createTools(auth: AuthContext) {
 
     listTenants: tool({
       description: 'List tenants with optional filters. Returns company name, industry, credit rating, and contact info.',
-      parameters: listTenantsParams,
+      inputSchema: listTenantsParams,
       execute: async (params: z.infer<typeof listTenantsSchema>) => {
-        const limit = params.limit ?? 25
+        const limit = params.limit ?? 10
         let query = supabase
           .from('tenants')
           .select('id, company_name, industry, credit_rating, primary_contact_name, primary_contact_email, parent_tenant_id', { count: 'exact' })
@@ -270,11 +270,11 @@ export function createTools(auth: AuthContext) {
 
     getTenant: tool({
       description: 'Get detailed info about a specific tenant including subsidiaries and leases.',
-      parameters: idParams,
+      inputSchema: idParams,
       execute: async (params: z.infer<typeof idSchema>) => {
         const { data: tenant, error } = await supabase
           .from('tenants')
-          .select('*')
+          .select('id, company_name, industry, website, primary_contact_name, primary_contact_email, primary_contact_phone, credit_rating, parent_tenant_id')
           .eq('id', params.id)
           .eq('org_id', auth.orgId)
           .is('deleted_at', null)
@@ -318,9 +318,9 @@ export function createTools(auth: AuthContext) {
 
     listLeases: tool({
       description: 'List leases with optional filters. Returns tenant, property, dates, rent, and status.',
-      parameters: listLeasesParams,
+      inputSchema: listLeasesParams,
       execute: async (params: z.infer<typeof listLeasesSchema>) => {
-        const limit = params.limit ?? 25
+        const limit = params.limit ?? 10
         let query = supabase
           .from('leases')
           .select('id, tenant_id, property_id, space_id, status, lease_type, start_date, end_date, monthly_rent, annual_rent, rent_escalation, security_deposit, tenants!inner(company_name), properties!inner(name), spaces(name)', { count: 'exact' })
@@ -354,11 +354,11 @@ export function createTools(auth: AuthContext) {
 
     getLease: tool({
       description: 'Get detailed info about a specific lease including full tenant, property, and space details.',
-      parameters: idParams,
+      inputSchema: idParams,
       execute: async (params: z.infer<typeof idSchema>) => {
         const { data: lease, error } = await supabase
           .from('leases')
-          .select('*, tenants!inner(id, company_name, industry, credit_rating), properties!inner(id, name, address, city, state), spaces(id, name, floor, sqft)')
+          .select('id, tenant_id, property_id, space_id, lease_type, status, start_date, end_date, monthly_rent, annual_rent, rent_escalation, security_deposit, renewal_options, terms, tenants!inner(id, company_name, industry, credit_rating), properties!inner(id, name, address, city, state), spaces(id, name, floor, sqft)')
           .eq('id', params.id)
           .eq('org_id', auth.orgId)
           .is('deleted_at', null)
@@ -374,9 +374,9 @@ export function createTools(auth: AuthContext) {
 
     listSpaces: tool({
       description: 'List spaces with optional filters. Returns name, floor, sqft, status, type, and property.',
-      parameters: listSpacesParams,
+      inputSchema: listSpacesParams,
       execute: async (params: z.infer<typeof listSpacesSchema>) => {
-        const limit = params.limit ?? 50
+        const limit = params.limit ?? 15
         let query = supabase
           .from('spaces')
           .select('id, property_id, name, floor, sqft, status, space_type, properties!inner(name)', { count: 'exact' })
@@ -404,9 +404,9 @@ export function createTools(auth: AuthContext) {
 
     listPortfolios: tool({
       description: 'List all portfolios in the organization.',
-      parameters: listPortfoliosParams,
+      inputSchema: listPortfoliosParams,
       execute: async (params: z.infer<typeof listPortfoliosSchema>) => {
-        const limit = params.limit ?? 25
+        const limit = params.limit ?? 10
         const { data, error, count } = await supabase
           .from('portfolios')
           .select('id, name, description', { count: 'exact' })
@@ -422,9 +422,9 @@ export function createTools(auth: AuthContext) {
 
     getAuditLog: tool({
       description: 'Query the audit log to see who changed what and when. Useful for tracking changes to any entity.',
-      parameters: auditLogParams,
+      inputSchema: auditLogParams,
       execute: async (params: z.infer<typeof auditLogSchema>) => {
-        const limit = params.limit ?? 25
+        const limit = params.limit ?? 10
         let query = supabase
           .from('audit_log')
           .select('id, entity_type, entity_id, action, field_name, old_value, new_value, changed_by, changed_at, change_source, users!inner(full_name)')
@@ -453,7 +453,7 @@ export function createTools(auth: AuthContext) {
 
     getSchema: tool({
       description: 'Get the data model schema including all entities, fields, relationships, and available picklist values.',
-      parameters: emptyParams,
+      inputSchema: emptyParams,
       execute: async () => {
         const { data: picklists } = await supabase
           .from('picklist_definitions')

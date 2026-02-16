@@ -156,6 +156,7 @@ export async function buildSystemPrompt(
 - Never expose internal IDs unless the user specifically asks for them.
 - You can make multiple tool calls in sequence to answer complex questions.
 - When calculating aggregates (totals, averages, counts), show your work briefly so the user can verify.
+- When mentioning specific properties or tenants, link them using markdown: [Property Name](/properties/{id}) or [Tenant Name](/tenants/{id}). This lets users click through to the detail page. Do NOT link leases, spaces, or portfolios — they don't have detail pages.
 
 ## Data Model
 ${schema}

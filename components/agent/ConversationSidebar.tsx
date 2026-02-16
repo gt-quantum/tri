@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Plus, Archive, Trash2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Plus, Archive, Trash2, PanelLeftClose, PanelLeftOpen, Pencil } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 
 interface Conversation {
@@ -15,13 +15,17 @@ interface Conversation {
 interface ConversationSidebarProps {
   activeId: string | null
   onSelect: (id: string | null) => void
+  refreshKey?: number
 }
 
-export default function ConversationSidebar({ activeId, onSelect }: ConversationSidebarProps) {
+export default function ConversationSidebar({ activeId, onSelect, refreshKey }: ConversationSidebarProps) {
   const { getToken } = useAuth()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)
   const [collapsed, setCollapsed] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const editInputRef = useRef<HTMLInputElement>(null)
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -30,6 +34,7 @@ export default function ConversationSidebar({ activeId, onSelect }: Conversation
 
       const res = await fetch('/api/v1/conversations?limit=50', {
         headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
       })
       if (res.ok) {
         const body = await res.json()
@@ -44,7 +49,7 @@ export default function ConversationSidebar({ activeId, onSelect }: Conversation
 
   useEffect(() => {
     fetchConversations()
-  }, [fetchConversations])
+  }, [fetchConversations, refreshKey])
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
@@ -83,6 +88,55 @@ export default function ConversationSidebar({ activeId, onSelect }: Conversation
       // Non-critical
     }
   }
+
+  const startEditing = (e: React.MouseEvent, conv: Conversation) => {
+    e.stopPropagation()
+    setEditingId(conv.id)
+    setEditTitle(conv.title)
+  }
+
+  const cancelEditing = () => {
+    setEditingId(null)
+    setEditTitle('')
+  }
+
+  const saveTitle = async (id: string) => {
+    const trimmed = editTitle.trim()
+    const original = conversations.find((c) => c.id === id)?.title
+    if (!trimmed || trimmed === original) {
+      cancelEditing()
+      return
+    }
+    try {
+      const token = await getToken()
+      if (!token) return
+      const res = await fetch(`/api/v1/conversations/${id}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: trimmed }),
+      })
+      if (res.ok) {
+        setConversations((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, title: trimmed } : c))
+        )
+      }
+    } catch {
+      // Non-critical
+    } finally {
+      cancelEditing()
+    }
+  }
+
+  // Auto-focus edit input when editing starts
+  useEffect(() => {
+    if (editingId && editInputRef.current) {
+      editInputRef.current.focus()
+      editInputRef.current.select()
+    }
+  }, [editingId])
 
   function formatTime(dateStr: string) {
     const date = new Date(dateStr)
@@ -159,7 +213,7 @@ export default function ConversationSidebar({ activeId, onSelect }: Conversation
             {conversations.map((conv) => (
               <div
                 key={conv.id}
-                onClick={() => onSelect(conv.id)}
+                onClick={() => editingId !== conv.id && onSelect(conv.id)}
                 className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
                   activeId === conv.id
                     ? 'bg-obsidian-800'
@@ -167,29 +221,58 @@ export default function ConversationSidebar({ activeId, onSelect }: Conversation
                 }`}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-body text-[13px] text-warm-200 truncate">
-                    {conv.title}
-                  </p>
+                  {editingId === conv.id ? (
+                    <input
+                      ref={editInputRef}
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          saveTitle(conv.id)
+                        } else if (e.key === 'Escape') {
+                          cancelEditing()
+                        }
+                      }}
+                      onBlur={() => saveTitle(conv.id)}
+                      className="w-full bg-obsidian-700 border border-brass-faint/30 rounded px-1.5 py-0.5 font-body text-[13px] text-warm-200 outline-none focus:border-brass/40"
+                      maxLength={200}
+                    />
+                  ) : (
+                    <p className="font-body text-[13px] text-warm-200 truncate">
+                      {conv.title}
+                    </p>
+                  )}
                   <p className="font-body text-[11px] text-warm-500 mt-0.5">
                     {formatTime(conv.updated_at)}
                   </p>
                 </div>
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => handleArchive(e, conv.id)}
-                    className="p-1 text-warm-500 hover:text-brass transition-colors"
-                    title="Archive"
-                  >
-                    <Archive size={11} />
-                  </button>
-                  <button
-                    onClick={(e) => handleDelete(e, conv.id)}
-                    className="p-1 text-warm-500 hover:text-red-400 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </div>
+                {editingId !== conv.id && (
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => startEditing(e, conv)}
+                      className="p-1 text-warm-500 hover:text-brass transition-colors"
+                      title="Rename"
+                    >
+                      <Pencil size={11} />
+                    </button>
+                    <button
+                      onClick={(e) => handleArchive(e, conv.id)}
+                      className="p-1 text-warm-500 hover:text-brass transition-colors"
+                      title="Archive"
+                    >
+                      <Archive size={11} />
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(e, conv.id)}
+                      className="p-1 text-warm-500 hover:text-red-400 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

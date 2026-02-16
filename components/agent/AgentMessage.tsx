@@ -1,8 +1,21 @@
 'use client'
 
 import { memo } from 'react'
+import Link from 'next/link'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import type { UIMessage } from 'ai'
 import AgentToolResult from './AgentToolResult'
+
+const markdownComponents = {
+  a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
+    // Internal links use Next.js client-side navigation
+    if (href && href.startsWith('/')) {
+      return <Link href={href} {...props}>{children}</Link>
+    }
+    return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>
+  },
+}
 
 interface AgentMessageProps {
   message: UIMessage
@@ -36,30 +49,33 @@ function AgentMessageComponent({ message, variant = 'page' }: AgentMessageProps)
     )
   }
 
-  // Assistant messages — clean, no bubble
+  // Assistant messages — clean, no bubble, with markdown rendering
   return (
     <div className={isWidget ? '' : 'max-w-[85%]'}>
       <div className="space-y-2">
         {message.parts.map((part, i) => {
           if (part.type === 'text' && part.text) {
             return (
-              <div key={i} className="font-body text-sm text-warm-200 whitespace-pre-wrap leading-[1.7]">
-                {part.text}
+              <div key={i} className="agent-markdown font-body text-sm text-warm-200 leading-[1.7]">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{part.text}</ReactMarkdown>
               </div>
             )
           }
           if (part.type === 'dynamic-tool' || part.type.startsWith('tool-')) {
             const toolPart = part as {
               type: string
-              toolName: string
+              toolName?: string
+              toolCallId?: string
               state: string
               input?: unknown
               output?: unknown
             }
+            // DynamicToolUIPart has toolName directly; ToolUIPart encodes it in type as "tool-{name}"
+            const name = toolPart.toolName ?? (part.type.startsWith('tool-') ? part.type.slice(5) : undefined)
             return (
               <AgentToolResult
                 key={i}
-                toolName={toolPart.toolName}
+                toolName={name ?? part.type}
                 state={toolPart.state}
                 args={toolPart.input as Record<string, unknown> | undefined}
                 result={toolPart.output}

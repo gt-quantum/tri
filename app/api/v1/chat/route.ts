@@ -65,6 +65,9 @@ export async function POST(request: NextRequest) {
     // Build system prompt
     const prompt = await buildSystemPrompt(auth, context)
 
+    // Build model messages from UI messages
+    const modelMessages = await convertToModelMessages(messages)
+
     // Stream the response
     const result = streamText({
       model: anthropic('claude-haiku-4-5-20251001'),
@@ -80,10 +83,10 @@ export async function POST(request: NextRequest) {
           role: 'system',
           content: prompt.dynamic,
         },
-        ...(await convertToModelMessages(messages)),
+        ...modelMessages,
       ],
       tools: createTools(auth),
-      stopWhen: stepCountIs(5),
+      stopWhen: stepCountIs(3),
       onFinish: async ({ text, usage, steps }) => {
         // Fire-and-forget: save conversation + log usage
         try {
@@ -96,10 +99,33 @@ export async function POST(request: NextRequest) {
             ? String(firstText).slice(0, 80)
             : 'New conversation'
 
-          // Build messages array for storage (input + new assistant response)
+          // Build complete assistant message parts from steps (preserves tool invocations)
+          const assistantParts: Array<Record<string, unknown>> = []
+          for (const step of (steps || [])) {
+            if (step.toolCalls) {
+              for (const tc of step.toolCalls) {
+                const tr = step.toolResults?.find((r) => r.toolCallId === tc.toolCallId)
+                assistantParts.push({
+                  type: 'dynamic-tool',
+                  toolName: tc.toolName,
+                  toolCallId: tc.toolCallId,
+                  state: 'output-available',
+                  input: tc.input,
+                  output: tr?.output ?? null,
+                })
+              }
+            }
+            if (step.text) {
+              assistantParts.push({ type: 'text', text: step.text })
+            }
+          }
+          if (assistantParts.length === 0 && text) {
+            assistantParts.push({ type: 'text', text })
+          }
+
           const storedMessages = [
             ...messages,
-            { role: 'assistant', content: text },
+            { role: 'assistant', parts: assistantParts },
           ]
 
           // Extract the last user message text for usage log

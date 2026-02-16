@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useAgentChat } from '@/lib/ai/use-agent-chat'
 import { useAuth } from '@/lib/auth-context'
@@ -10,6 +10,8 @@ import AgentInput from './AgentInput'
 
 interface AgentChatAreaProps {
   conversationId: string | null
+  onConversationCreated?: (id: string) => void
+  onConversationUpdate?: () => void
 }
 
 const STARTERS = [
@@ -19,7 +21,7 @@ const STARTERS = [
   'List all vacant spaces',
 ]
 
-export default function AgentChatArea({ conversationId }: AgentChatAreaProps) {
+export default function AgentChatArea({ conversationId, onConversationCreated, onConversationUpdate }: AgentChatAreaProps) {
   const { getToken } = useAuth()
 
   const {
@@ -31,6 +33,7 @@ export default function AgentChatArea({ conversationId }: AgentChatAreaProps) {
     sendMessage,
     stop,
     error,
+    setConversationId,
   } = useAgentChat({
     conversationId,
     context: { page: '/agent' },
@@ -38,10 +41,28 @@ export default function AgentChatArea({ conversationId }: AgentChatAreaProps) {
 
   const isStreaming = status === 'streaming' || status === 'submitted'
 
-  // Load conversation messages when conversationId changes
+  // Track whether we just created a conversation (skip loading its empty messages)
+  const justCreatedRef = useRef(false)
+
+  // Refresh sidebar when streaming completes (conversation saved/updated server-side)
+  const prevStatusRef = useRef<string>(status)
   useEffect(() => {
-    if (!conversationId) {
-      setMessages([])
+    const wasActive = prevStatusRef.current === 'streaming' || prevStatusRef.current === 'submitted'
+    if (wasActive && status === 'ready') {
+      onConversationUpdate?.()
+    }
+    prevStatusRef.current = status
+  }, [status, onConversationUpdate])
+
+  // Load conversation messages on mount or when conversationId changes (eager creation)
+  // Note: sidebar switching is handled by key-based remount in the parent, so this
+  // effect mainly handles: initial mount with a conversationId, and the null→id
+  // transition during eager creation (where justCreatedRef skips the load).
+  useEffect(() => {
+    if (!conversationId) return
+
+    if (justCreatedRef.current) {
+      justCreatedRef.current = false
       return
     }
 
@@ -52,16 +73,29 @@ export default function AgentChatArea({ conversationId }: AgentChatAreaProps) {
 
         const res = await fetch(`/api/v1/conversations/${conversationId}`, {
           headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
         })
         if (res.ok) {
           const body = await res.json()
           const msgs = body.data?.messages || []
           setMessages(
-            msgs.map((m: { role: string; content: string }, i: number) => ({
-              id: `loaded-${i}`,
-              role: m.role as UIMessage['role'],
-              parts: [{ type: 'text' as const, text: m.content }],
-            }))
+            msgs.map((m: { role: string; content?: string; parts?: Array<Record<string, unknown>> }, i: number) => {
+              // Preserve full parts array (including tool invocations) when available
+              if (Array.isArray(m.parts) && m.parts.length > 0) {
+                return {
+                  id: `loaded-${i}`,
+                  role: m.role as UIMessage['role'],
+                  parts: m.parts,
+                }
+              }
+              // Legacy format: plain content string → single text part
+              const text = typeof m.content === 'string' ? m.content : ''
+              return {
+                id: `loaded-${i}`,
+                role: m.role as UIMessage['role'],
+                parts: [{ type: 'text' as const, text }],
+              }
+            })
           )
         }
       } catch {
@@ -70,24 +104,61 @@ export default function AgentChatArea({ conversationId }: AgentChatAreaProps) {
     }
 
     loadConversation()
-  }, [conversationId, getToken, setMessages])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId])
+
+  // Create conversation eagerly before first message, so the server always does an UPDATE
+  const ensureConversation = useCallback(async (firstMessageText: string): Promise<void> => {
+    if (conversationId) return
+
+    try {
+      const token = await getToken()
+      if (!token) return
+
+      const res = await fetch('/api/v1/conversations', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: firstMessageText.slice(0, 80),
+          source: 'page',
+        }),
+      })
+
+      if (res.ok) {
+        const body = await res.json()
+        const newId = body.data?.id
+        if (newId) {
+          justCreatedRef.current = true
+          setConversationId(newId)
+          onConversationCreated?.(newId)
+        }
+      }
+    } catch {
+      // Fall through — server will create conversation in onFinish as fallback
+    }
+  }, [conversationId, getToken, setConversationId, onConversationCreated])
 
   const handleSend = useCallback(async () => {
     if (!input.trim()) return
     const text = input
     setInput('')
+    await ensureConversation(text)
     await sendMessage(text)
-  }, [input, setInput, sendMessage])
+  }, [input, setInput, sendMessage, ensureConversation])
 
   const handleStarter = useCallback(async (question: string) => {
     setInput('')
+    await ensureConversation(question)
     await sendMessage(question)
-  }, [setInput, sendMessage])
+  }, [setInput, sendMessage, ensureConversation])
 
   return (
     <div className="flex-1 flex flex-col min-w-0 h-full">
       {messages.length === 0 && !conversationId ? (
-        // Welcome state — centered like Claude
+        // Welcome state
         <div className="flex-1 flex flex-col items-center justify-center px-6">
           <div className="w-12 h-12 rounded-full bg-brass/10 border border-brass/15 flex items-center justify-center mb-6">
             <Sparkles size={20} strokeWidth={1.5} className="text-brass" />
