@@ -87,7 +87,7 @@
 
   /* CommandRail */
   .command-rail {
-    @apply bg-obsidian-900 flex flex-col h-full overflow-hidden;
+    @apply bg-obsidian-900 flex flex-col h-full overflow-visible;
     transition: width 200ms ease-out;
   }
 
