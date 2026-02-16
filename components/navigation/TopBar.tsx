@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronRight, Search, LogOut, Menu } from 'lucide-react'
+import { ChevronRight, Search, Menu } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { usePortfolioContext } from '@/lib/use-portfolio-context'
 import { triggerMobileNav } from './CommandRail'
@@ -39,7 +39,7 @@ const segmentLabels: Record<string, string> = {
 
 export default function TopBar() {
   const pathname = usePathname()
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const { portfolioId, portfolioName } = usePortfolioContext()
 
   const isSettings = pathname.startsWith('/settings')
@@ -127,26 +127,6 @@ export default function TopBar() {
             <kbd className="hidden lg:inline text-[10px] font-body text-warm-500 bg-obsidian-800 px-1.5 py-0.5 rounded border border-brass-faint">
               &#8984;K
             </kbd>
-          </button>
-
-          {/* Divider */}
-          <div className="w-px h-5 bg-brass-faint" />
-
-          {/* User info */}
-          <div className="text-right">
-            <div className="text-sm text-warm-white font-body">{user?.fullName}</div>
-            <div className="text-[10px] text-warm-300 uppercase tracking-wider font-body">
-              {user?.role}
-            </div>
-          </div>
-
-          {/* Logout */}
-          <button
-            onClick={logout}
-            className="p-1.5 text-warm-400 hover:text-warm-200 transition-colors"
-            title="Sign out"
-          >
-            <LogOut size={16} strokeWidth={1.5} />
           </button>
         </div>
       </div>

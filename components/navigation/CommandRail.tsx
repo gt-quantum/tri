@@ -8,7 +8,6 @@ import {
   Building2,
   Users,
   FileText,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -18,8 +17,7 @@ import PortfolioSwitcher from './PortfolioSwitcher'
 
 type NavLink = { type: 'link'; icon: any; label: string; path: string; match: (p: string) => boolean }
 type NavDivider = { type: 'divider' }
-type NavSpacer = { type: 'spacer' }
-type NavItem = NavLink | NavDivider | NavSpacer
+type NavItem = NavLink | NavDivider
 
 const navItems: NavItem[] = [
   { type: 'link', icon: LayoutDashboard, label: 'Dashboard', path: '/', match: (p) => p === '/' },
@@ -27,9 +25,6 @@ const navItems: NavItem[] = [
   { type: 'link', icon: Building2, label: 'Properties', path: '/properties', match: (p) => p.startsWith('/properties') },
   { type: 'link', icon: Users, label: 'Tenants', path: '/tenants', match: (p) => p.startsWith('/tenants') },
   { type: 'link', icon: FileText, label: 'Leases', path: '/leases', match: (p) => p.startsWith('/leases') },
-  { type: 'divider' },
-  { type: 'spacer' },
-  { type: 'link', icon: Settings, label: 'Settings', path: '/settings', match: (p) => p.startsWith('/settings') },
 ]
 
 export default function CommandRail() {
@@ -79,22 +74,19 @@ export default function CommandRail() {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className="command-rail hidden lg:flex border-r border-brass-faint/30 flex-shrink-0"
-        style={{ width: expanded ? 240 : 60 }}
+        style={{ width: expanded ? 200 : 60 }}
       >
         {/* TRI Monogram */}
-        <div className="flex items-center justify-center py-5">
-          <Link
-            href="/"
-            className="flex items-center justify-center w-9 h-9 border border-brass/15 rounded-lg"
-          >
-            <span className="font-display text-base text-brass tracking-wide">T</span>
-          </Link>
+        <Link href="/" className="rail-item py-4">
+          <div className="w-5 h-5 border border-brass/15 rounded flex items-center justify-center flex-shrink-0">
+            <span className="font-display text-[11px] text-brass">T</span>
+          </div>
           {expanded && (
-            <span className="ml-3 font-display text-sm text-brass tracking-widest rail-label">
+            <span className="font-display text-sm text-brass tracking-widest rail-label">
               TRI
             </span>
           )}
-        </div>
+        </Link>
 
         {/* Divider */}
         <div className="rail-divider" />
@@ -109,7 +101,6 @@ export default function CommandRail() {
         <div className="flex flex-col flex-1">
           {navItems.map((item, i) => {
             if (item.type === 'divider') return <div key={i} className="rail-divider" />
-            if (item.type === 'spacer') return <div key={i} className="flex-1" />
             if (item.type !== 'link') return null
 
             const active = item.match(pathname)
@@ -193,7 +184,6 @@ export default function CommandRail() {
             <div className="flex flex-col flex-1 px-2 py-2">
               {navItems.map((item, i) => {
                 if (item.type === 'divider') return <div key={i} className="rail-divider" />
-                if (item.type === 'spacer') return <div key={i} className="flex-1" />
                 if (item.type !== 'link') return null
 
                 const active = item.match(pathname)
@@ -218,19 +208,28 @@ export default function CommandRail() {
 
             {/* User section */}
             <div className="rail-divider" />
-            <div className="p-4 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full border-2 border-brass/30 bg-obsidian-800 flex items-center justify-center">
-                <span className="font-body text-[11px] text-warm-200">{initials}</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm text-warm-white font-body truncate">{user?.fullName}</div>
-                <span className={`badge text-[9px] ${roleBadgeClass}`}>{user?.role}</span>
-              </div>
+            <div className="px-2 py-2 space-y-1">
+              <Link
+                href="/settings/profile"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-warm-300 hover:text-warm-white hover:bg-brass-faint/30 transition-colors"
+              >
+                <div className="w-7 h-7 rounded-full border border-brass/30 bg-obsidian-800 flex items-center justify-center">
+                  <span className="font-body text-xs text-warm-200">{initials.charAt(0)}</span>
+                </div>
+                <span className="font-body text-sm truncate">{user?.fullName}</span>
+              </Link>
+              <Link
+                href="/settings"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-warm-300 hover:text-warm-white hover:bg-brass-faint/30 transition-colors"
+              >
+                <span className="font-body text-sm">Settings</span>
+              </Link>
               <button
                 onClick={logout}
-                className="p-1.5 text-warm-400 hover:text-warm-200 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-warm-300 hover:text-warm-white hover:bg-brass-faint/30 transition-colors"
               >
                 <LogOut size={16} strokeWidth={1.5} />
+                <span className="font-body text-sm">Sign Out</span>
               </button>
             </div>
           </div>
@@ -265,6 +264,11 @@ function UserDropdown({
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
+  // Close dropdown when rail collapses
+  useEffect(() => {
+    if (!expanded) setOpen(false)
+  }, [expanded])
+
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -280,15 +284,13 @@ function UserDropdown({
       <button
         onClick={() => setOpen(!open)}
         className="rail-item w-full group"
+        style={{ paddingLeft: 16 }}
       >
-        <div className="w-8 h-8 rounded-full border-2 border-brass/30 bg-obsidian-800 flex items-center justify-center flex-shrink-0">
-          <span className="font-body text-[11px] text-warm-200">{initials}</span>
+        <div className="w-7 h-7 rounded-full border border-brass/30 bg-obsidian-800 flex items-center justify-center flex-shrink-0">
+          <span className="font-body text-xs text-warm-200">{initials.charAt(0)}</span>
         </div>
         {expanded && (
-          <div className="min-w-0 rail-label">
-            <div className="text-sm text-warm-white font-body truncate">{fullName}</div>
-            <span className={`badge text-[9px] ${roleBadgeClass}`}>{role}</span>
-          </div>
+          <span className="text-sm text-warm-300 font-body truncate rail-label">{fullName}</span>
         )}
       </button>
 
@@ -307,6 +309,14 @@ function UserDropdown({
           >
             My Profile
           </Link>
+          <Link
+            href="/settings"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2 text-sm font-body text-warm-300 hover:text-warm-white hover:bg-brass-faint/50 transition-colors"
+          >
+            Settings
+          </Link>
+          <div className="rail-divider my-1" />
           <button
             onClick={() => { setOpen(false); onLogout() }}
             className="w-full text-left px-4 py-2 text-sm font-body text-warm-300 hover:text-warm-white hover:bg-brass-faint/50 transition-colors"

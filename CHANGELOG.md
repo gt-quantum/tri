@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2026-02-15] — Entity List Pages: Properties, Tenants & Leases
+
+### Added
+- **Shared API list hook** (`lib/hooks/use-api-list.ts`) — reusable hook for paginated API fetching. Uses `useAuth().getToken()` for Bearer token auth, handles stale request cancellation via fetch ID counter, re-fetches when params change via serialized dependency tracking. Returns `{ data, total, loading, error, refetch }`.
+- **Properties list page** (`app/(app)/properties/page.tsx`):
+  - 4 summary cards: total properties, total value, total sqft, avg year built
+  - Filter bar: city search (debounced 300ms), property type dropdown, state dropdown, clear filters
+  - Portfolio context integration — filters by selected portfolio via `usePortfolioContext()`, resets to page 1 on portfolio change
+  - Sortable table: property name (linked to detail), location, portfolio, type badge, sqft, value, year built
+  - Pagination: 25/page, Prev/Next + numbered pages with ellipsis
+- **Tenants list page** (`app/(app)/tenants/page.tsx`):
+  - 4 summary cards: total tenants, industries count, subsidiaries count, credit distribution badges
+  - Filter bar: company name search (debounced), industry dropdown, credit rating dropdown, clear filters
+  - Sortable table: company name (linked, with subsidiary badge), industry, credit rating (colored badge), contact info, parent tenant (linked)
+  - No portfolio filtering — tenants are org-level entities
+- **Leases list page** (`app/(app)/leases/page.tsx`) — replaces placeholder:
+  - 5 summary cards: total leases, active count, monthly revenue, expiring soon (6-month window), avg monthly rent
+  - Filter bar: status dropdown, lease type dropdown, clear filters
+  - Sortable table: tenant (linked), property (linked), space, type badge, status (colored badge), start/end dates (amber highlight for expiring soon), monthly rent
+  - Expandable detail rows: chevron toggle reveals annual rent, escalation %, security deposit, lease type, time remaining, renewal options, terms/notes. Only one row expanded at a time.
+
+### Shared Patterns
+- All pages use the same `useApiList` hook for consistent API fetching
+- Loading state: brass spinner + loading text
+- Empty state: Lucide icon + "No items found" + filter adjustment hint
+- Error state: red banner with error message
+- Pagination: offset-based with ellipsis range, brass active page indicator
+- Sort headers: click to toggle direction, brass arrow indicator, hover to reveal dormant arrows
+- Filter inputs: `bg-obsidian-850 border-brass-faint` with brass focus ring
+- Animations: `animate-fade-up` with stagger classes
+
+### Design Decisions
+- **`useApiList` over useDashboardData:** The dashboard hook fetches all entities at once for cross-entity calculations. List pages need server-side filtering, sorting, and pagination — different requirements, different hook.
+- **No shared DataTable component:** Each page has different columns, filters, and behaviors (expandable rows on leases, portfolio filtering on properties). Inline JSX is simpler than a generic table abstraction for 3 pages.
+- **Expandable rows instead of lease detail page:** Leases are always viewed in context of their tenant/property. An inline detail panel serves this better than a separate `/leases/[id]` page.
+- See ADR-023 for full rationale.
+
+---
+
 ## [2026-02-15] — Frontend Restructure: Navigation Shell & Settings
 
 ### Added

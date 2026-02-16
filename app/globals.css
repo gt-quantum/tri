@@ -106,7 +106,7 @@
   }
 
   .rail-divider {
-    @apply h-px w-8 mx-auto my-2;
+    @apply h-px mx-5 my-2;
     background: linear-gradient(90deg, transparent, rgba(200, 165, 90, 0.15), transparent);
   }
 

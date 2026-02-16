@@ -190,7 +190,7 @@ Every endpoint follows these patterns:
 ## Frontend — App Shell & Navigation
 
 **Framework:** Next.js 15 App Router (same project as API)
-**Data fetching:** Authenticated API calls via `useDashboardData()` hook (`lib/use-dashboard-data.ts`)
+**Data fetching:** `useDashboardData()` for dashboard/detail pages (`lib/use-dashboard-data.ts`), `useApiList()` for list pages (`lib/hooks/use-api-list.ts`)
 **Auth context:** `AuthProvider` + `useAuth()` hook (`lib/auth-context.tsx`)
 **Portfolio context:** `usePortfolioContext()` hook (`lib/use-portfolio-context.ts`)
 
@@ -200,9 +200,11 @@ app/
 ├── (auth)/                    ← No navigation shell (login, signup, onboarding)
 ├── (app)/                     ← App shell: CommandRail + TopBar + content
 │   ├── page.tsx               ← Dashboard (/)
-│   ├── properties/[id]/       ← Property detail (/properties/[id])
-│   ├── tenants/[id]/          ← Tenant detail (/tenants/[id])
-│   ├── leases/                ← Leases placeholder (/leases)
+│   ├── properties/            ← Properties list (/properties)
+│   │   └── [id]/              ← Property detail (/properties/[id])
+│   ├── tenants/               ← Tenants list (/tenants)
+│   │   └── [id]/              ← Tenant detail (/tenants/[id])
+│   ├── leases/                ← Leases list with expandable rows (/leases)
 │   └── settings/              ← Settings with tab navigation
 │       ├── layout.tsx         ← Horizontal tab nav (role-filtered)
 │       ├── profile/           ← Everyone
@@ -232,9 +234,11 @@ app/
 
 ### Pages
 - `/` — Main dashboard (Analytics / Data tabs, summary cards)
+- `/properties` — Properties list (filterable, sortable, paginated, portfolio-aware)
 - `/properties/[id]` — Property detail (spaces, active leases, lease history)
+- `/tenants` — Tenants list (searchable, filterable by industry/credit, paginated)
 - `/tenants/[id]` — Tenant detail (parent/subsidiary, portfolio footprint, leases)
-- `/leases` — Leases list (placeholder)
+- `/leases` — Leases list (filterable, sortable, expandable detail rows)
 - `/settings/*` — 11 settings pages (2 full, 9 placeholder)
 - `/login`, `/signup`, `/onboarding`, `/auth/callback` — Auth flow
 
@@ -253,6 +257,7 @@ app/
 - `AuthProvider` wraps `(app)/layout.tsx` — provides user info to shell components without data fetching
 - `usePortfolioContext()` — manages portfolio selection via URL `?portfolio={id}` + localStorage
 - `useDashboardData()` — shared hook for data fetching, used by dashboard + detail pages
+- `useApiList()` — shared hook for paginated list pages (properties, tenants, leases). Uses `useAuth().getToken()` for Bearer auth, handles stale request cancellation, re-fetches when params change.
 - `setBreadcrumbName(id, name)` — detail pages set entity names for TopBar breadcrumbs
 - Mobile nav: DOM custom event `tri-mobile-nav-toggle` connects TopBar hamburger to CommandRail overlay
 - Leaflet requires `dynamic(() => import(...), { ssr: false })` for SSR safety

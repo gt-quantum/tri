@@ -466,3 +466,35 @@ Restructure the frontend into Next.js route groups — `(auth)` for unauthentica
 - **React Context for mobile nav state:** Would require wrapping layout in an additional provider. DOM events are simpler for a boolean toggle between two known components.
 - **Server Component layouts with data fetching:** Would eliminate client-side loading states but requires restructuring all data fetching. Deferred to a future optimization pass — current client-side approach works well.
 - **Full breadcrumb context provider:** Over-engineered for the current needs. Only detail pages need to inject names; the module-level store handles this cleanly.
+
+---
+
+## ADR-023: Entity List Pages with Shared API List Hook
+
+**Date:** 2026-02-15
+**Status:** Accepted
+
+### Context
+The CommandRail sidebar links to `/properties`, `/tenants`, and `/leases`, but only detail pages (`/properties/[id]`, `/tenants/[id]`) and a placeholder (`/leases`) existed. All three entities have full API endpoints with server-side filtering, sorting, and pagination. The app needs proper list pages.
+
+### Decision
+Create a shared `useApiList` hook (`lib/hooks/use-api-list.ts`) and three list pages that use it. Each page fetches via the REST API with Bearer token auth from `useAuth().getToken()`, with server-side filtering and pagination.
+
+### Key Design Choices
+
+**`useApiList` over `useDashboardData`:** The existing dashboard hook fetches all entities (properties, spaces, tenants, leases, portfolios) in parallel and computes cross-entity metrics client-side. List pages need different behavior: server-side filtering, sorting, and offset-based pagination for a single entity type. A separate hook avoids overloading the dashboard hook with incompatible concerns.
+
+**`useAuth().getToken()` over direct Supabase client:** The settings/users page creates its own `createSupabaseBrowserClient()` to get session tokens. The list pages instead use the existing `AuthProvider`'s `getToken()` method, which is cleaner — it reuses the already-initialized client and avoids duplicating session management logic.
+
+**No shared DataTable or FilterBar components:** Each page has meaningfully different columns (7 for properties, 5 for tenants, 9 for leases), different filter sets, and different behaviors (portfolio context on properties, expandable rows on leases). A generic table abstraction for 3 consumers would add complexity without reducing code — the per-page JSX is clearer and easier to modify independently.
+
+**Expandable rows for leases instead of a detail page:** Unlike properties and tenants, leases are always viewed in context of their tenant and property. An inline expandable row shows the supplementary fields (annual rent, escalation, security deposit, time remaining, renewal options) without losing table context. This also avoids creating a fourth detail page for an entity that's fundamentally a relationship.
+
+**Stale request cancellation via fetch ID counter:** The hook uses a `useRef` counter incremented on each fetch. When the response arrives, it checks if the counter still matches. This prevents race conditions when filters change rapidly (e.g., during debounced search typing) without the complexity of AbortController.
+
+**Summary stats from current page data:** Summary cards (total value, industries count, etc.) are computed from the current page's data, not a separate API call. The `total` from `meta.total` gives the unfiltered count. This is a pragmatic tradeoff — stats reflect the visible page, not the full dataset — but avoids extra API calls.
+
+### Alternatives Considered
+- **React Query / SWR:** Neither is in the codebase. The custom hook provides caching-free fetching that's sufficient for the current needs. Adding a data-fetching library would be warranted if the app grows to need cache invalidation, optimistic updates, or background refetching.
+- **URL-based filter state:** Encoding filters in URL params would make filtered views shareable/bookmarkable. Chose local state for simplicity — matches the existing dashboard behavior and avoids URL pollution. Can be added later if needed.
+- **Shared pagination component:** The pagination UI is ~30 lines of JSX duplicated across 3 pages. Extracting it would save ~60 lines but add a new component file and props interface. Not worth the indirection for 3 consumers.
